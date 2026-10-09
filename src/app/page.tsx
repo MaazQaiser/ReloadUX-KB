@@ -1,7 +1,8 @@
 export default function Home() {
   return (
-    <main className="flex flex-1 items-center justify-center">
-      <h1 className="text-2xl font-semibold tracking-tight">reloadux</h1>
-    </main>
+    <section className="flex flex-col gap-2">
+      <h1 className="text-2xl font-semibold tracking-tight">project intelligence</h1>
+      <p className="text-muted-foreground">Ask what reloadux has built before.</p>
+    </section>
   );
 }
