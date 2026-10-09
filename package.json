@@ -11,6 +11,8 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "db:indexes": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/create-indexes.ts",
+    "db:local": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/db-local.ts",
+    "db:seed": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed/index.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
