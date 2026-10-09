@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { Pagination } from "@/components/projects/pagination";
 import { ProjectCard } from "@/components/projects/project-card";
 import { ProjectFiltersForm } from "@/components/projects/project-filters";
 import { ProjectsSkeleton } from "@/components/projects/projects-skeleton";
 import { parseProjectSearch, type RawSearchParams } from "@/schemas/project-filters";
+import { requireRole } from "@/server/auth";
 import { getGridFilterOptions, listProjectsForGrid } from "@/server/services/projects";
 
 export const metadata: Metadata = { title: "projects" };
@@ -26,9 +26,8 @@ export default function ProjectsPage({ searchParams }: PageProps<"/projects">) {
 }
 
 async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
+  await requireRole("viewer");
   const { filters, pagination, ignored } = parseProjectSearch(await searchParams);
-  // Database reads are always per request; the driver's internal clock reads would otherwise trip prerendering.
-  await connection();
   const [page, options] = await Promise.all([listProjectsForGrid(filters, pagination), getGridFilterOptions()]);
   const hasFilters = Object.values(filters).some((value) => value !== undefined);
 

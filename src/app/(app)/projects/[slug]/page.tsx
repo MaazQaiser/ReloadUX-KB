@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { DetailSkeleton } from "@/components/project-detail/detail-skeleton";
 import { ProjectHeader, ProjectMain } from "@/components/project-detail/project-main";
 import { ProjectSidebar } from "@/components/project-detail/project-sidebar";
 import { slugSchema } from "@/schemas/common";
+import { requireRole } from "@/server/auth";
 import { getProjectDetail } from "@/server/services/projects";
 
 export const metadata: Metadata = { title: "project" };
@@ -25,10 +25,9 @@ export default function ProjectPage({ params }: PageProps<"/projects/[slug]">) {
 }
 
 async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
+  await requireRole("viewer");
   const slug = slugSchema.safeParse((await params).slug);
   if (!slug.success) notFound();
-  // Database reads are always per request; the driver's internal clock reads would otherwise trip prerendering.
-  await connection();
 
   const detail = await getProjectDetail(slug.data);
   if (!detail) notFound();

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { UserMenu } from "./auth/user-menu";
 import { NavLinks, StaticNavLinks, type NavItem } from "./nav-link";
 import { Wordmark } from "./wordmark";
 
@@ -21,6 +22,12 @@ export function AppHeader() {
             <NavLinks items={NAV_ITEMS} />
           </Suspense>
         </nav>
+        <div className="ml-auto">
+          {/* Reads the session, so it streams in after the shell. */}
+          <Suspense fallback={null}>
+            <UserMenu />
+          </Suspense>
+        </div>
       </div>
     </header>
   );
