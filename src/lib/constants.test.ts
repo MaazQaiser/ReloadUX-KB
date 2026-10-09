@@ -8,6 +8,7 @@ import {
   PROJECT_STATUS,
   REVIEW_STATUS,
   SERVICE,
+  USER_ROLE,
 } from "./constants";
 
 interface AnyTagList {
@@ -24,6 +25,7 @@ const lists: [string, AnyTagList][] = Object.entries({
   FLOW,
   PERSON_ROLE,
   REVIEW_STATUS,
+  USER_ROLE,
 });
 
 describe("tag lists", () => {

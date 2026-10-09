@@ -8,6 +8,7 @@ import {
   PROJECT_STATUS,
   REVIEW_STATUS,
   SERVICE,
+  USER_ROLE,
 } from "@/lib/constants";
 import { uniqueList } from "./common";
 
@@ -19,6 +20,7 @@ export const aiFeatureSchema = z.enum(AI_FEATURE.keys);
 export const flowSchema = z.enum(FLOW.keys);
 export const personRoleSchema = z.enum(PERSON_ROLE.keys);
 export const reviewStatusSchema = z.enum(REVIEW_STATUS.keys);
+export const userRoleSchema = z.enum(USER_ROLE.keys);
 
 export const productTypesSchema = uniqueList(productTypeSchema);
 export const servicesSchema = uniqueList(serviceSchema);
@@ -38,3 +40,4 @@ export type AiFeature = z.infer<typeof aiFeatureSchema>;
 export type Flow = z.infer<typeof flowSchema>;
 export type PersonRole = z.infer<typeof personRoleSchema>;
 export type ReviewStatus = z.infer<typeof reviewStatusSchema>;
+export type UserRole = z.infer<typeof userRoleSchema>;

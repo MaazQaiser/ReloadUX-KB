@@ -30,21 +30,25 @@ type EnvSource = Record<string, string | undefined>;
  * Validates environment variables. Problems name the variable but never echo
  * its value, because values are secrets and errors end up in logs.
  */
-export function parseServerEnv(source: EnvSource): ServerEnv {
+function parseEnv<T extends z.ZodType>(schema: T, source: EnvSource): z.infer<T> {
   // Treat empty strings as unset so a blank line in .env.local reads as "missing".
   const cleaned = Object.fromEntries(
     Object.entries(source).filter(([, value]) => value !== undefined && value !== ""),
   );
-  const result = serverEnvSchema.safeParse(cleaned);
+  const result = schema.safeParse(cleaned);
   if (!result.success) {
     throw new EnvError(
       result.error.issues.map((issue) => {
-        const name = issue.path.join(".");
+        const name = issue.path.join(".") || "environment";
         return issue.code === "invalid_type" ? `${name}: is required` : `${name}: ${issue.message}`;
       }),
     );
   }
   return result.data;
+}
+
+export function parseServerEnv(source: EnvSource): ServerEnv {
+  return parseEnv(serverEnvSchema, source);
 }
 
 let cached: ServerEnv | undefined;
@@ -53,4 +57,85 @@ let cached: ServerEnv | undefined;
 export function getServerEnv(): ServerEnv {
   cached ??= parseServerEnv(process.env);
   return cached;
+}
+
+const authEnvSchema = z
+  .object({
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    // Firebase web config: public by design, passed to the sign-in button as props.
+    NEXT_PUBLIC_FIREBASE_API_KEY: z.string().min(1),
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: z.string().min(1),
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().regex(/^[a-z0-9-]{4,40}$/, "must be a Firebase project id"),
+    // Admin service account: server only. Not needed against the emulator.
+    FIREBASE_CLIENT_EMAIL: z.email().optional(),
+    // Stored on one line in .env files, with \n for line breaks.
+    FIREBASE_PRIVATE_KEY: z
+      .string()
+      .optional()
+      .transform((key) => key?.replace(/\\n/g, "\n")),
+    FIREBASE_AUTH_EMULATOR_HOST: z
+      .string()
+      .regex(/^[\w.-]+:\d+$/, "must be host:port")
+      .optional(),
+    INITIAL_ADMIN_EMAILS: z
+      .string()
+      .optional()
+      .transform((list) =>
+        (list ?? "")
+          .split(",")
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+  })
+  .refine((env) => env.FIREBASE_AUTH_EMULATOR_HOST || (env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY), {
+    message: "FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY are required unless FIREBASE_AUTH_EMULATOR_HOST is set",
+  })
+  .refine((env) => !(env.NODE_ENV === "production" && env.FIREBASE_AUTH_EMULATOR_HOST), {
+    message: "FIREBASE_AUTH_EMULATOR_HOST must not be set in production",
+  });
+
+export interface AuthConfig {
+  web: { apiKey: string; authDomain: string; projectId: string; emulatorHost?: string };
+  admin: { projectId: string; clientEmail?: string; privateKey?: string; emulatorHost?: string };
+  initialAdminEmails: string[];
+}
+
+const AUTH_VARIABLES = [
+  "NEXT_PUBLIC_FIREBASE_API_KEY",
+  "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
+  "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
+  "FIREBASE_CLIENT_EMAIL",
+  "FIREBASE_PRIVATE_KEY",
+  "FIREBASE_AUTH_EMULATOR_HOST",
+];
+
+/**
+ * Returns null when sign-in isn't configured at all, so the app can say so
+ * and stay locked. A partial configuration is a mistake, so it throws.
+ */
+export function parseAuthConfig(source: EnvSource): AuthConfig | null {
+  if (!AUTH_VARIABLES.some((name) => source[name])) return null;
+  const env = parseEnv(authEnvSchema, source);
+  return {
+    web: {
+      apiKey: env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      authDomain: env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      emulatorHost: env.FIREBASE_AUTH_EMULATOR_HOST,
+    },
+    admin: {
+      projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      clientEmail: env.FIREBASE_CLIENT_EMAIL,
+      privateKey: env.FIREBASE_PRIVATE_KEY,
+      emulatorHost: env.FIREBASE_AUTH_EMULATOR_HOST,
+    },
+    initialAdminEmails: env.INITIAL_ADMIN_EMAILS,
+  };
+}
+
+let cachedAuth: AuthConfig | null | undefined;
+
+export function getAuthConfig(): AuthConfig | null {
+  if (cachedAuth === undefined) cachedAuth = parseAuthConfig(process.env);
+  return cachedAuth;
 }

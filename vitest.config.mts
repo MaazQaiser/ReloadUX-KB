@@ -11,6 +11,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Expected warnings from failure-path tests would bury real output.
+    env: { LOG_LEVEL: "error" },
     projects: [
       {
         extends: true,

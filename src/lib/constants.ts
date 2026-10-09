@@ -91,3 +91,16 @@ export const REVIEW_STATUS = tagList({
   draft: "draft",
   approved: "approved",
 });
+
+/** Ordered from least to most access; see hasRole(). */
+export const USER_ROLE = tagList({
+  viewer: "viewer",
+  editor: "editor",
+  admin: "admin",
+});
+
+/** Only verified Google accounts on this exact domain may sign in (SPEC.md decisions log). */
+export const ALLOWED_EMAIL_DOMAIN = "reloadux.com";
+
+/** "__session" is the one cookie name Firebase Hosting forwards, so keep it if hosting changes. */
+export const SESSION_COOKIE_NAME = "__session";
