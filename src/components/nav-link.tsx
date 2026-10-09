@@ -4,19 +4,38 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-export function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
-  const pathname = usePathname();
-  const active = pathname === href || pathname.startsWith(`${href}/`);
+export interface NavItem {
+  href: string;
+  label: string;
+}
+
+function NavAnchor({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link
-      href={href}
+      href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
         "rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground",
-        active && "text-foreground font-medium",
+        active && "font-medium text-foreground",
       )}
     >
-      {children}
+      {item.label}
     </Link>
   );
+}
+
+/** Links without the active highlight: the prerendered shell, before the URL is known. */
+export function StaticNavLinks({ items }: { items: NavItem[] }) {
+  return items.map((item) => <NavAnchor key={item.href} item={item} active={false} />);
+}
+
+export function NavLinks({ items }: { items: NavItem[] }) {
+  const pathname = usePathname();
+  return items.map((item) => (
+    <NavAnchor
+      key={item.href}
+      item={item}
+      active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+    />
+  ));
 }
