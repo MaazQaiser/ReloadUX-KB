@@ -42,6 +42,7 @@ export function uniqueList<T extends z.ZodType<string>>(item: T) {
   return z.array(item).refine((values) => new Set(values).size === values.length, "must not repeat values");
 }
 
+export type Actor = z.infer<typeof actorSchema>;
 export type Link = z.infer<typeof linkSchema>;
 export type Milestone = z.infer<typeof milestoneSchema>;
 export type Metric = z.infer<typeof metricSchema>;
