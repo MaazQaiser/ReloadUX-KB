@@ -26,3 +26,54 @@ export const paginationSchema = z.object({
 
 export type ProjectFilters = z.infer<typeof projectFiltersSchema>;
 export type Pagination = z.infer<typeof paginationSchema>;
+
+export type RawSearchParams = Record<string, string | string[] | undefined>;
+
+export interface ParsedProjectSearch {
+  filters: ProjectFilters;
+  pagination: Pagination;
+  /** Param names that were present but invalid, so the page can say they were ignored. */
+  ignored: string[];
+}
+
+/**
+ * Reads grid filters from URL params one field at a time: a bad value (an old
+ * bookmark, a hand-edited URL) drops that filter instead of failing the page.
+ */
+export function parseProjectSearch(raw: RawSearchParams): ParsedProjectSearch {
+  const first = (key: string) => {
+    const value = raw[key];
+    const single = Array.isArray(value) ? value[0] : value;
+    return single === "" ? undefined : single;
+  };
+  const ignored: string[] = [];
+
+  const filters: Record<string, unknown> = {};
+  for (const [key, schema] of Object.entries(projectFiltersSchema.shape)) {
+    const value = first(key);
+    if (value === undefined) continue;
+    const result = schema.safeParse(value);
+    if (result.success) filters[key] = result.data;
+    else ignored.push(key);
+  }
+
+  const paginationResult = paginationSchema.safeParse({ page: first("page") });
+  if (!paginationResult.success) ignored.push("page");
+
+  return {
+    filters: projectFiltersSchema.parse(filters),
+    pagination: paginationResult.success ? paginationResult.data : paginationSchema.parse({}),
+    ignored,
+  };
+}
+
+/** Builds a grid URL for the given filters and page, leaving out empty values. */
+export function projectSearchHref(filters: ProjectFilters, page = 1): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined) params.set(key, String(value));
+  }
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/projects?${query}` : "/projects";
+}

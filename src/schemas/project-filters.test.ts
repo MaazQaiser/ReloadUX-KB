@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { paginationSchema, projectFiltersSchema } from "./project-filters";
+import { paginationSchema, parseProjectSearch, projectFiltersSchema, projectSearchHref } from "./project-filters";
 
 describe("projectFiltersSchema", () => {
   it("accepts URL-style strings and coerces the year", () => {
@@ -26,5 +26,53 @@ describe("paginationSchema", () => {
   it("caps page size", () => {
     expect(paginationSchema.safeParse({ page_size: "500" }).success).toBe(false);
     expect(paginationSchema.safeParse({ page: "0" }).success).toBe(false);
+  });
+});
+
+describe("parseProjectSearch", () => {
+  it("reads valid params and defaults pagination", () => {
+    expect(parseProjectSearch({ industry: "fintech", year: "2025", q: "ledger" })).toEqual({
+      filters: { industry: "fintech", year: 2025, q: "ledger" },
+      pagination: { page: 1, page_size: 24 },
+      ignored: [],
+    });
+  });
+
+  it("drops invalid params one by one and reports them", () => {
+    expect(parseProjectSearch({ industry: "crypto", flow: "onboarding", page: "-3" })).toEqual({
+      filters: { flow: "onboarding" },
+      pagination: { page: 1, page_size: 24 },
+      ignored: ["industry", "page"],
+    });
+  });
+
+  it("treats empty strings as unset and takes the first of repeated params", () => {
+    expect(parseProjectSearch({ q: "", industry: ["hr", "legal"], page: "2" })).toMatchObject({
+      filters: { industry: "hr" },
+      pagination: { page: 2 },
+      ignored: [],
+    });
+  });
+
+  it("does not let the URL set the page size", () => {
+    expect(parseProjectSearch({ page_size: "100" }).pagination.page_size).toBe(24);
+  });
+});
+
+describe("projectSearchHref", () => {
+  it("builds a URL from set filters and the page", () => {
+    expect(projectSearchHref({ industry: "hr", year: 2024, q: "a b" }, 2)).toBe(
+      "/projects?industry=hr&year=2024&q=a+b&page=2",
+    );
+  });
+
+  it("returns the bare path with no filters on page 1", () => {
+    expect(projectSearchHref({})).toBe("/projects");
+  });
+
+  it("round-trips through parseProjectSearch", () => {
+    const filters = { flow: "checkout" as const, designer: "64b7f0c2a1b2c3d4e5f60718" };
+    const query = Object.fromEntries(new URL(projectSearchHref(filters, 3), "http://x").searchParams);
+    expect(parseProjectSearch(query)).toMatchObject({ filters, pagination: { page: 3 } });
   });
 });
