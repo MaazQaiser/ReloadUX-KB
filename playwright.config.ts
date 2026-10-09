@@ -16,9 +16,10 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `pnpm dev --port ${PORT}`,
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    // A production build against a throwaway, seeded MongoDB (see scripts/e2e-server.ts).
+    command: "pnpm build && pnpm -s e2e:server",
+    url: `${baseURL}/projects`,
+    reuseExistingServer: false,
+    timeout: 240_000,
   },
 });
