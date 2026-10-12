@@ -5,8 +5,10 @@ import { COLLECTIONS } from "@/server/db/collections";
 import { syncIndexes } from "@/server/db/indexes";
 import {
   findProjectBySlug,
+  insertProject,
   listDeliveryYears,
   listProjects,
+  updateProjectById,
   upsertProjectBySlug,
 } from "@/server/repositories/projects";
 import type { ProjectInput } from "@/schemas/project";
@@ -169,5 +171,48 @@ describe("listProjects", () => {
 
   it("lists delivery years newest first", async () => {
     expect(await listDeliveryYears()).toEqual([2025, 2024]);
+  });
+});
+
+describe("insertProject", () => {
+  it("inserts a new project and refuses a taken slug, even a draft's", async () => {
+    const created = await insertProject(elia, SEED);
+    expect(created).toMatchObject({ slug: "elia-wellness", search_text: "seed text" });
+
+    expect(await insertProject({ ...elia, name: "Other" }, SEED)).toBeNull();
+    await upsertProjectBySlug(fintua, { ...SEED, reviewStatus: "draft" });
+    expect(await insertProject(fintua, SEED)).toBeNull();
+    expect((await findProjectBySlug("elia-wellness"))?.name).toBe("Elia Wellness");
+  });
+});
+
+describe("updateProjectById", () => {
+  it("updates in place and clears removed fields", async () => {
+    const created = await insertProject(elia, SEED);
+    if (!created) throw new Error("insert failed");
+
+    const updated = await updateProjectById(created.id, { ...elia, client_name: undefined, name: "Elia 2" }, SEED);
+
+    expect(updated).toMatchObject({ id: created.id, name: "Elia 2" });
+    expect(updated).not.toHaveProperty("client_name");
+  });
+
+  it("returns null for a soft-deleted or missing project, and never changes the slug", async () => {
+    const created = await insertProject(elia, SEED);
+    if (!created) throw new Error("insert failed");
+
+    expect(await updateProjectById(created.id, { ...elia, slug: "new-slug" }, SEED)).toBeNull();
+    await (await collection()).updateOne({ slug: elia.slug }, { $set: { deleted_at: new Date() } });
+    expect(await updateProjectById(created.id, elia, SEED)).toBeNull();
+    expect(await updateProjectById("64b7f0c2a1b2c3d4e5f60799", elia, SEED)).toBeNull();
+  });
+});
+
+describe("findProjectBySlug with drafts", () => {
+  it("finds drafts only when asked", async () => {
+    await upsertProjectBySlug(elia, { ...SEED, reviewStatus: "draft" });
+
+    expect(await findProjectBySlug("elia-wellness")).toBeNull();
+    expect(await findProjectBySlug("elia-wellness", { includeDrafts: true })).toMatchObject({ review_status: "draft" });
   });
 });

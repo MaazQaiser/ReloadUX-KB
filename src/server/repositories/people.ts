@@ -1,4 +1,5 @@
 import "server-only";
+import { MongoServerError } from "mongodb";
 import { getDb } from "@/server/db/client";
 import { COLLECTIONS } from "@/server/db/collections";
 import { personInputSchema, personSchema, type Person, type PersonInput } from "@/schemas/person";
@@ -35,6 +36,21 @@ export async function upsertPersonBySlug(input: PersonInput, actor: Actor): Prom
   );
   // Safe: with upsert and returnDocument "after", Mongo always returns the document.
   return toPerson(saved!);
+}
+
+const DUPLICATE_KEY = 11000;
+
+/** Inserts a new person; null when the slug is already taken (the unique index decides). */
+export async function insertPerson(input: PersonInput, actor: Actor): Promise<Person | null> {
+  const person = personInputSchema.parse(input);
+  const document = { ...person, updated_by: actorSchema.parse(actor), updated_at: new Date() };
+  try {
+    const { insertedId } = await (await people()).insertOne(document);
+    return toPerson({ _id: insertedId, ...document });
+  } catch (error) {
+    if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) return null;
+    throw error;
+  }
 }
 
 export async function findPersonBySlug(slug: string): Promise<Person | null> {

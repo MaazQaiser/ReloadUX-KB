@@ -3,7 +3,15 @@ import type { Person } from "@/schemas/person";
 import type { Project, ProjectInput } from "@/schemas/project";
 import * as peopleRepository from "@/server/repositories/people";
 import * as projectsRepository from "@/server/repositories/projects";
-import { getGridFilterOptions, getProjectDetail, listProjectsForGrid, saveProject } from "./projects";
+import {
+  createProject,
+  getGridFilterOptions,
+  getProjectDetail,
+  getProjectForEdit,
+  listProjectsForGrid,
+  saveProject,
+  updateProject,
+} from "./projects";
 
 vi.mock("@/server/repositories/people");
 vi.mock("@/server/repositories/projects");
@@ -174,5 +182,80 @@ describe("getGridFilterOptions", () => {
 
     expect(await getGridFilterOptions()).toEqual({ designers: [person(SARA, "Sara")], years: [2025, 2024] });
     expect(peopleRepository.listPeople).toHaveBeenCalledWith({ role: "designer" });
+  });
+});
+
+describe("createProject", () => {
+  beforeEach(() => {
+    vi.mocked(peopleRepository.findPeopleByIds).mockResolvedValue([
+      person(SARA, "Sara"),
+      person(ALI, "Ali"),
+      person(OMAR, "Omar"),
+    ]);
+  });
+
+  it("inserts as approved, with search text", async () => {
+    vi.mocked(projectsRepository.insertProject).mockResolvedValue(stored);
+
+    expect(await createProject(input, "64b7f0c2a1b2c3d4e5f60799")).toEqual({ ok: true, value: stored });
+    expect(projectsRepository.insertProject).toHaveBeenCalledWith(expect.objectContaining({ slug: "elia-wellness" }), {
+      actor: "64b7f0c2a1b2c3d4e5f60799",
+      reviewStatus: "approved",
+      searchText: expect.stringContaining("Elia Wellness"),
+    });
+  });
+
+  it("reports a taken slug", async () => {
+    vi.mocked(projectsRepository.insertProject).mockResolvedValue(null);
+    expect(await createProject(input, "system:test")).toEqual({
+      ok: false,
+      error: { kind: "slug_taken", slug: "elia-wellness" },
+    });
+  });
+
+  it("returns validation issues before touching the database", async () => {
+    const result = await createProject({ ...input, summary: "" }, "system:test");
+    expect(result.ok === false && result.error.kind).toBe("invalid");
+    expect(projectsRepository.insertProject).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateProject", () => {
+  beforeEach(() => {
+    vi.mocked(peopleRepository.findPeopleByIds).mockResolvedValue([
+      person(SARA, "Sara"),
+      person(ALI, "Ali"),
+      person(OMAR, "Omar"),
+    ]);
+  });
+
+  it("keeps the stored slug whatever the input says", async () => {
+    vi.mocked(projectsRepository.updateProjectById).mockResolvedValue(stored);
+    // Extra keys from a tampered request must not change the slug either.
+    const tampered = { ...input, slug: "renamed", name: "Renamed" };
+
+    await updateProject(stored.id, tampered, { actor: "system:test", slug: "elia-wellness" });
+
+    expect(projectsRepository.updateProjectById).toHaveBeenCalledWith(
+      stored.id,
+      expect.objectContaining({ slug: "elia-wellness", name: "Renamed" }),
+      expect.objectContaining({ reviewStatus: "approved" }),
+    );
+  });
+
+  it("reports a project that no longer exists", async () => {
+    vi.mocked(projectsRepository.updateProjectById).mockResolvedValue(null);
+    expect(await updateProject(stored.id, input, { actor: "system:test", slug: "elia-wellness" })).toEqual({
+      ok: false,
+      error: { kind: "not_found" },
+    });
+  });
+});
+
+describe("getProjectForEdit", () => {
+  it("includes drafts", async () => {
+    vi.mocked(projectsRepository.findProjectBySlug).mockResolvedValue(stored);
+    await getProjectForEdit("elia-wellness");
+    expect(projectsRepository.findProjectBySlug).toHaveBeenCalledWith("elia-wellness", { includeDrafts: true });
   });
 });

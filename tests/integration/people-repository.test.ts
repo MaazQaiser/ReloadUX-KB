@@ -3,7 +3,13 @@ import { getDb } from "@/server/db/client";
 import { COLLECTIONS } from "@/server/db/collections";
 import { syncIndexes } from "@/server/db/indexes";
 import { CorruptDocumentError } from "@/server/repositories/mongo";
-import { findPeopleByIds, findPersonBySlug, listPeople, upsertPersonBySlug } from "@/server/repositories/people";
+import {
+  findPeopleByIds,
+  findPersonBySlug,
+  insertPerson,
+  listPeople,
+  upsertPersonBySlug,
+} from "@/server/repositories/people";
 
 const SEED = "system:seed";
 const sara = { name: "Sara Khan", slug: "sara-khan", email: "sara@reloadux.com", roles: ["designer" as const] };
@@ -92,5 +98,13 @@ describe("reads", () => {
     await (await collection()).updateOne({ slug: "sara-khan" }, { $set: { roles: ["ceo"] } });
 
     await expect(findPersonBySlug("sara-khan")).rejects.toBeInstanceOf(CorruptDocumentError);
+  });
+});
+
+describe("insertPerson", () => {
+  it("inserts once and returns null for a taken slug", async () => {
+    expect(await insertPerson(sara, SEED)).toMatchObject({ slug: "sara-khan", active: true, updated_by: SEED });
+    expect(await insertPerson({ ...sara, name: "Another Sara" }, SEED)).toBeNull();
+    expect(await (await collection()).countDocuments()).toBe(1);
   });
 });

@@ -1,5 +1,5 @@
 import "server-only";
-import { ObjectId, type Document, type Filter, type WithId } from "mongodb";
+import { MongoServerError, ObjectId, type Document, type Filter, type WithId } from "mongodb";
 import { z } from "zod";
 import { escapeRegExp } from "@/lib/regex";
 import { getDb } from "@/server/db/client";
@@ -49,7 +49,6 @@ function toProject(document: WithId<Document>): Project {
   });
 }
 
-/** Creates or updates the project with this slug, so seeds and imports can run twice. */
 export interface ProjectWriteOptions {
   actor: Actor;
   reviewStatus: ReviewStatus;
@@ -57,34 +56,79 @@ export interface ProjectWriteOptions {
   searchText: string;
 }
 
-export async function upsertProjectBySlug(
-  input: ProjectInput,
-  { actor, reviewStatus, searchText }: ProjectWriteOptions,
-): Promise<Project> {
+/** Validates and builds the $set/$unset for a write; every write path goes through here. */
+function toProjectWrite(input: ProjectInput, { actor, reviewStatus, searchText }: ProjectWriteOptions) {
   const project = projectInputSchema.parse(input);
   const absent = Object.fromEntries(OPTIONAL_FIELDS.map((key) => [key, undefined]));
   const { $set, $unset } = toUpdate({ ...absent, ...toStoredReferences(project) });
-
-  const saved = await (await projects()).findOneAndUpdate(
-    { slug: project.slug },
-    {
-      $set: {
-        ...$set,
-        review_status: reviewStatusSchema.parse(reviewStatus),
-        search_text: searchText,
-        updated_by: actorSchema.parse(actor),
-        updated_at: new Date(),
-      },
-      ...(Object.keys($unset).length > 0 && { $unset }),
+  return {
+    slug: project.slug,
+    $set: {
+      ...$set,
+      review_status: reviewStatusSchema.parse(reviewStatus),
+      search_text: searchText,
+      updated_by: actorSchema.parse(actor),
+      updated_at: new Date(),
     },
-    { upsert: true, returnDocument: "after" },
-  );
+    $unset,
+  };
+}
+
+function withUnset({ $set, $unset }: { $set: Document; $unset: Record<string, ""> }) {
+  return { $set, ...(Object.keys($unset).length > 0 && { $unset }) };
+}
+
+/** Creates or updates the project with this slug, so seeds and imports can run twice. */
+export async function upsertProjectBySlug(input: ProjectInput, options: ProjectWriteOptions): Promise<Project> {
+  const write = toProjectWrite(input, options);
+  const saved = await (await projects()).findOneAndUpdate({ slug: write.slug }, withUnset(write), {
+    upsert: true,
+    returnDocument: "after",
+  });
   // Safe: with upsert and returnDocument "after", Mongo always returns the document.
   return toProject(saved!);
 }
 
-export async function findProjectBySlug(slug: string): Promise<Project | null> {
-  const document = await (await projects()).findOne({ slug, ...VISIBLE });
+const DUPLICATE_KEY = 11000;
+
+/**
+ * Inserts a new project. Returns null when the slug is taken, by any project
+ * including drafts and soft-deleted ones; the unique index makes this safe
+ * even when two people save at once.
+ */
+export async function insertProject(input: ProjectInput, options: ProjectWriteOptions): Promise<Project | null> {
+  const { $set } = toProjectWrite(input, options);
+  try {
+    const { insertedId } = await (await projects()).insertOne($set);
+    return toProject({ _id: insertedId, ...$set });
+  } catch (error) {
+    if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) return null;
+    throw error;
+  }
+}
+
+/** Updates a live project in place. The slug never changes, so links keep working. Null if it's gone. */
+export async function updateProjectById(
+  id: string,
+  input: ProjectInput,
+  options: ProjectWriteOptions,
+): Promise<Project | null> {
+  const write = toProjectWrite(input, options);
+  const saved = await (await projects()).findOneAndUpdate(
+    { _id: toObjectId(id), slug: write.slug, deleted_at: { $exists: false } },
+    withUnset(write),
+    { returnDocument: "after" },
+  );
+  return saved ? toProject(saved) : null;
+}
+
+/** Visible projects only, unless `includeDrafts` (for editors opening a draft to edit). */
+export async function findProjectBySlug(
+  slug: string,
+  { includeDrafts = false }: { includeDrafts?: boolean } = {},
+): Promise<Project | null> {
+  const filter = includeDrafts ? { slug, deleted_at: { $exists: false } } : { slug, ...VISIBLE };
+  const document = await (await projects()).findOne(filter);
   return document ? toProject(document) : null;
 }
 

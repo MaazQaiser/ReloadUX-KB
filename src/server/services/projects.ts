@@ -4,14 +4,16 @@ import { buildSearchText } from "@/lib/search-text";
 import { err, ok, toValidationIssues, type Result, type ValidationIssue } from "@/lib/result";
 import type { Actor } from "@/schemas/common";
 import type { Person } from "@/schemas/person";
-import { projectInputSchema, type Project, type ProjectInput } from "@/schemas/project";
+import { projectInputSchema, type Project, type ProjectFields, type ProjectInput } from "@/schemas/project";
 import type { Pagination, ProjectFilters } from "@/schemas/project-filters";
 import type { ReviewStatus } from "@/schemas/tags";
 import { findPeopleByIds, listPeople } from "@/server/repositories/people";
 import {
   findProjectBySlug,
+  insertProject,
   listDeliveryYears,
   listProjects,
+  updateProjectById,
   upsertProjectBySlug,
 } from "@/server/repositories/projects";
 
@@ -19,15 +21,17 @@ export type SaveProjectError =
   | { kind: "invalid"; issues: ValidationIssue[] }
   | { kind: "unknown_people"; ids: string[] };
 
+interface PreparedProject {
+  fields: ProjectFields;
+  searchText: string;
+}
+
 /**
- * The one path for saving a project: every entry point (form, admin chat,
- * import) gets the same validation, people check and search_text. Chunks and
- * embeddings join here in phase 2e.
+ * Validation, the people check and search_text: the steps every save shares,
+ * whichever entry point (form, admin chat, import, seed) it comes from.
+ * Chunks and embeddings join here in phase 2e.
  */
-export async function saveProject(
-  input: ProjectInput,
-  options: { actor: Actor; reviewStatus: ReviewStatus },
-): Promise<Result<Project, SaveProjectError>> {
+async function prepareProject(input: ProjectInput): Promise<Result<PreparedProject, SaveProjectError>> {
   const parsed = projectInputSchema.safeParse(input);
   if (!parsed.success) return err({ kind: "invalid", issues: toValidationIssues(parsed.error) });
 
@@ -38,8 +42,50 @@ export async function saveProject(
   const unknown = referenced.filter((id) => !found.has(id));
   if (unknown.length > 0) return err({ kind: "unknown_people", ids: unknown });
 
-  const searchText = buildSearchText(parsed.data, people.map((person) => person.name));
-  return ok(await upsertProjectBySlug(parsed.data, { ...options, searchText }));
+  return ok({ fields: parsed.data, searchText: buildSearchText(parsed.data, people.map((person) => person.name)) });
+}
+
+/** Create-or-update by slug, for seeds and imports that must be safe to re-run. */
+export async function saveProject(
+  input: ProjectInput,
+  options: { actor: Actor; reviewStatus: ReviewStatus },
+): Promise<Result<Project, SaveProjectError>> {
+  const prepared = await prepareProject(input);
+  if (!prepared.ok) return prepared;
+  return ok(await upsertProjectBySlug(prepared.value.fields, { ...options, searchText: prepared.value.searchText }));
+}
+
+export type CreateProjectError = SaveProjectError | { kind: "slug_taken"; slug: string };
+
+/** A new project from the form. An editor saving it is the approval, so it goes live. */
+export async function createProject(input: ProjectInput, actor: Actor): Promise<Result<Project, CreateProjectError>> {
+  const prepared = await prepareProject(input);
+  if (!prepared.ok) return prepared;
+
+  const { fields, searchText } = prepared.value;
+  const created = await insertProject(fields, { actor, reviewStatus: "approved", searchText });
+  return created ? ok(created) : err({ kind: "slug_taken", slug: fields.slug });
+}
+
+export type UpdateProjectError = SaveProjectError | { kind: "not_found" };
+
+/** Saves an edit. The slug is kept from the stored record whatever the input says. */
+export async function updateProject(
+  id: string,
+  input: Omit<ProjectInput, "slug">,
+  { actor, slug }: { actor: Actor; slug: string },
+): Promise<Result<Project, UpdateProjectError>> {
+  const prepared = await prepareProject({ ...input, slug });
+  if (!prepared.ok) return prepared;
+
+  const { fields, searchText } = prepared.value;
+  const updated = await updateProjectById(id, fields, { actor, reviewStatus: "approved", searchText });
+  return updated ? ok(updated) : err({ kind: "not_found" });
+}
+
+/** A project for the edit form, drafts included. */
+export async function getProjectForEdit(slug: string): Promise<Project | null> {
+  return findProjectBySlug(slug, { includeDrafts: true });
 }
 
 export interface ProjectPeople {
