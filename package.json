@@ -14,6 +14,7 @@
     "db:local": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/db-local.ts",
     "db:seed": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed/index.ts",
     "e2e:server": "tsx --conditions=react-server scripts/e2e-server.ts",
+    "auth:emulator": "tsx scripts/auth-emulator.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "firebase-tools": "15.33.0",
     "mongodb-memory-server": "11.3.0",
     "tailwindcss": "^4",
     "tsx": "4.23.15",

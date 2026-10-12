@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { getAuthConfig } from "@/env";
 import { isAllowedEmail } from "@/lib/auth-rules";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
@@ -58,6 +59,8 @@ export async function createSession(
  * Cached per request, so several components can ask without extra calls.
  */
 export const getSessionUser = cache(async (): Promise<User | null> => {
+  // Verifying a session reads the clock; mark this as request-time work so prerendering never runs it.
+  await connection();
   const config = getAuthConfig();
   if (!config) return null;
   const cookie = (await cookies()).get(SESSION_COOKIE_NAME)?.value;

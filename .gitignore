@@ -49,3 +49,8 @@ next-env.d.ts
 
 # local MongoDB data (pnpm db:local)
 /.data/
+
+# firebase emulator logs
+firebase-debug.log
+/.next-e2e/
+/playwright/.auth/

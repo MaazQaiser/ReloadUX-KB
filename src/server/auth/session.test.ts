@@ -10,6 +10,7 @@ vi.mock("@/server/repositories/users");
 vi.mock("./firebase-admin");
 const cookieStore = { get: vi.fn() };
 vi.mock("next/headers", () => ({ cookies: async () => cookieStore }));
+vi.mock("next/server", () => ({ connection: async () => undefined }));
 
 const CONFIG: env.AuthConfig = {
   web: { apiKey: "k", authDomain: "d", projectId: "reloadux-kb" },

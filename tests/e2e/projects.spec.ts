@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { VIEWER } from "./helpers";
+
+test.use({ storageState: VIEWER.state });
 
 test.describe("projects grid", () => {
   test("home redirects to the grid, which lists every seeded project", async ({ page }) => {
@@ -6,7 +9,10 @@ test.describe("projects grid", () => {
 
     await expect(page).toHaveURL(/\/projects$/);
     await expect(page.getByRole("heading", { level: 1, name: "projects" })).toBeVisible();
-    await expect(page.getByText("8 projects")).toBeVisible();
+    // Other specs add projects in parallel, so check the seeded ones rather than a count.
+    for (const name of ["Calmly Care", "Ledgerly", "Questline", "Learnloop"]) {
+      await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
+    }
     await expect(page.getByRole("link", { name: "projects", exact: true })).toHaveAttribute("aria-current", "page");
   });
 
@@ -39,7 +45,7 @@ test.describe("projects grid", () => {
     await expect(page.getByText("Ignored filters that weren't recognised: year.")).toBeVisible();
 
     await page.getByRole("link", { name: "Clear filters" }).click();
-    await expect(page.getByText("8 projects")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Calmly Care", exact: true })).toBeVisible();
   });
 
   test("opens a project from its card", async ({ page }) => {
