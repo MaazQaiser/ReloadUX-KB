@@ -12,7 +12,7 @@ import {
 import type { ProjectInput } from "@/schemas/project";
 import type { ProjectFilters } from "@/schemas/project-filters";
 
-const SEED = { actor: "system:seed", reviewStatus: "approved" } as const;
+const SEED = { actor: "system:seed", reviewStatus: "approved", searchText: "seed text" } as const;
 const SARA = "64b7f0c2a1b2c3d4e5f60718";
 const ALI = "64b7f0c2a1b2c3d4e5f60719";
 const PAGE = { page: 1, page_size: 24 };
@@ -75,6 +75,7 @@ describe("upsertProjectBySlug", () => {
       nda: false,
       review_status: "approved",
       updated_by: "system:seed",
+      search_text: "seed text",
     });
     expect(saved.id).toMatch(/^[a-f0-9]{24}$/);
   });

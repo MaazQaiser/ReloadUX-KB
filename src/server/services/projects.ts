@@ -1,5 +1,6 @@
 import "server-only";
 import { getCompleteness, type Completeness } from "@/lib/completeness";
+import { buildSearchText } from "@/lib/search-text";
 import { err, ok, toValidationIssues, type Result, type ValidationIssue } from "@/lib/result";
 import type { Actor } from "@/schemas/common";
 import type { Person } from "@/schemas/person";
@@ -19,8 +20,9 @@ export type SaveProjectError =
   | { kind: "unknown_people"; ids: string[] };
 
 /**
- * The one path for saving a project. Phase 2 adds search_text, chunks and
- * embeddings here, so every entry point (form, admin chat, import) gets them.
+ * The one path for saving a project: every entry point (form, admin chat,
+ * import) gets the same validation, people check and search_text. Chunks and
+ * embeddings join here in phase 2e.
  */
 export async function saveProject(
   input: ProjectInput,
@@ -31,11 +33,13 @@ export async function saveProject(
 
   const { lead_designer, designers, account_manager } = parsed.data;
   const referenced = [...new Set([lead_designer, ...designers, ...(account_manager ? [account_manager] : [])])];
-  const found = new Set((await findPeopleByIds(referenced)).map((person) => person.id));
+  const people = await findPeopleByIds(referenced);
+  const found = new Set(people.map((person) => person.id));
   const unknown = referenced.filter((id) => !found.has(id));
   if (unknown.length > 0) return err({ kind: "unknown_people", ids: unknown });
 
-  return ok(await upsertProjectBySlug(parsed.data, options));
+  const searchText = buildSearchText(parsed.data, people.map((person) => person.name));
+  return ok(await upsertProjectBySlug(parsed.data, { ...options, searchText }));
 }
 
 export interface ProjectPeople {

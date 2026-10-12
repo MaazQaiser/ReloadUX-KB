@@ -99,7 +99,7 @@ describe("saveProject", () => {
     expect(result).toEqual({ ok: true, value: stored });
     expect(projectsRepository.upsertProjectBySlug).toHaveBeenCalledWith(
       expect.objectContaining({ slug: "elia-wellness", nda: false }),
-      OPTIONS,
+      { ...OPTIONS, searchText: expect.stringContaining("Sara") },
     );
   });
 });

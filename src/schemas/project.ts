@@ -82,9 +82,11 @@ export const projectInputSchema = z
     { message: "delivery date can't be before the start date", path: ["delivery_date"] },
   );
 
-/** A stored project, as repositories return it. search_text and embedding join in phase 2. */
+/** A stored project, as repositories return it. The embedding joins with Voyage in phase 2e. */
 export const projectSchema = projectInputSchema.safeExtend({
   id: idSchema,
+  // Generated on save for keyword search. Optional only for records saved before it existed.
+  search_text: z.string().optional(),
   review_status: reviewStatusSchema,
   updated_by: actorSchema,
   updated_at: z.date(),
@@ -92,4 +94,6 @@ export const projectSchema = projectInputSchema.safeExtend({
 });
 
 export type ProjectInput = z.input<typeof projectInputSchema>;
+/** Validated input, with defaults applied. */
+export type ProjectFields = z.infer<typeof projectInputSchema>;
 export type Project = z.infer<typeof projectSchema>;
