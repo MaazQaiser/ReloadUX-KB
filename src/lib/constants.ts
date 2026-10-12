@@ -104,3 +104,6 @@ export const ALLOWED_EMAIL_DOMAIN = "reloadux.com";
 
 /** "__session" is the one cookie name Firebase Hosting forwards, so keep it if hosting changes. */
 export const SESSION_COOKIE_NAME = "__session";
+
+/** Slugs that would collide with routes under /projects. */
+export const RESERVED_PROJECT_SLUGS: readonly string[] = ["new"];

@@ -5,6 +5,7 @@ import { Pagination } from "@/components/projects/pagination";
 import { ProjectCard } from "@/components/projects/project-card";
 import { ProjectFiltersForm } from "@/components/projects/project-filters";
 import { ProjectsSkeleton } from "@/components/projects/projects-skeleton";
+import { hasRole } from "@/lib/auth-rules";
 import { parseProjectSearch, type RawSearchParams } from "@/schemas/project-filters";
 import { requireRole } from "@/server/auth";
 import { getGridFilterOptions, listProjectsForGrid } from "@/server/services/projects";
@@ -26,13 +27,20 @@ export default function ProjectsPage({ searchParams }: PageProps<"/projects">) {
 }
 
 async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
-  await requireRole("viewer");
+  const user = await requireRole("viewer");
   const { filters, pagination, ignored } = parseProjectSearch(await searchParams);
   const [page, options] = await Promise.all([listProjectsForGrid(filters, pagination), getGridFilterOptions()]);
   const hasFilters = Object.values(filters).some((value) => value !== undefined);
 
   return (
     <>
+      {hasRole(user.role, "editor") && (
+        <div>
+          <Link href="/projects/new" className="inline-flex rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90">
+            Add project
+          </Link>
+        </div>
+      )}
       {/* Keyed on the filters so the inputs reset to the URL after each navigation. */}
       <ProjectFiltersForm key={JSON.stringify(filters)} filters={filters} options={options} />
 

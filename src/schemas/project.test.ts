@@ -42,6 +42,10 @@ describe("projectInputSchema", () => {
     },
   );
 
+  it("refuses slugs that collide with routes", () => {
+    expect(projectInputSchema.safeParse({ ...minimal, slug: "new" }).success).toBe(false);
+  });
+
   it("needs at least one product type", () => {
     expect(projectInputSchema.safeParse({ ...minimal, product_types: [] }).success).toBe(false);
   });

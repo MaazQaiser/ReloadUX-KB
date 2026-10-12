@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RESERVED_PROJECT_SLUGS } from "@/lib/constants";
 import {
   actorSchema,
   idSchema,
@@ -31,7 +32,7 @@ export const projectInputSchema = z
   .object({
     // Basics
     name: shortTextSchema,
-    slug: slugSchema,
+    slug: slugSchema.refine((slug) => !RESERVED_PROJECT_SLUGS.includes(slug), "this name is reserved; add a word to it"),
     client_name: shortTextSchema.optional(),
     industry: industrySchema,
     country: shortTextSchema.optional(),
