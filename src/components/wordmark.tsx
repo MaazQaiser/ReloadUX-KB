@@ -4,7 +4,7 @@ export function Wordmark() {
   return (
     <Link
       href="/"
-      className="text-lg font-semibold tracking-tight lowercase focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
+      className="text-2xl font-bold tracking-tight lowercase focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
     >
       reloadux
     </Link>

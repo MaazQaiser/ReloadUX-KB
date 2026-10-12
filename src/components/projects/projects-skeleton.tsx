@@ -11,7 +11,7 @@ export function ProjectsSkeleton() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }, (_, index) => (
-          <Skeleton key={index} className="h-52 rounded-xl" />
+          <Skeleton key={index} className="h-72" />
         ))}
       </div>
     </div>

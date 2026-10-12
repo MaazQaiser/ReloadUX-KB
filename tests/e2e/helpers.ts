@@ -12,6 +12,11 @@ export async function signInThroughPopup(page: Page, email: string) {
   const popupPromise = page.waitForEvent("popup");
   await page.getByRole("button", { name: "Sign in with Google" }).click();
   const popup = await popupPromise;
+  // The popup reports back through Firebase's hidden iframe on this page. A script that
+  // signs in faster than that iframe loads loses the result, so wait for it first.
+  await expect
+    .poll(() => page.frames().some((frame) => frame.url().includes("/emulator/auth/iframe")), { timeout: 30_000 })
+    .toBe(true);
 
   // The emulator's own page doesn't link labels to inputs, so use its element ids.
   await popup.locator("#add-account-button").click();

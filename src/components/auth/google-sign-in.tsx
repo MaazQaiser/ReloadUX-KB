@@ -88,7 +88,7 @@ export function GoogleSignIn({ config, next }: { config: FirebaseWebConfig; next
 
   return (
     <div className="flex flex-col gap-3">
-      <Button onClick={signIn} disabled={working} size="lg">
+      <Button onClick={signIn} disabled={working} size="lg" className="w-full">
         {working ? "Signing in…" : "Sign in with Google"}
       </Button>
       <p role="alert" aria-live="polite" className="min-h-5 text-sm text-destructive">

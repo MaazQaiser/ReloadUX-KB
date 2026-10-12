@@ -15,8 +15,8 @@ function NavAnchor({ item, active }: { item: NavItem; active: boolean }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground",
-        active && "font-medium text-foreground",
+        "px-1 py-1 text-base text-soft-foreground underline-offset-8 transition-colors hover:text-foreground",
+        active && "text-foreground underline decoration-1",
       )}
     >
       {item.label}

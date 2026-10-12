@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { projectSearchHref, type ProjectFilters } from "@/schemas/project-filters";
 
 interface PaginationProps {
@@ -9,7 +10,7 @@ interface PaginationProps {
 
 export function Pagination({ filters, page, pageCount }: PaginationProps) {
   if (pageCount <= 1) return null;
-  const linkClass = "rounded-md border px-3 py-1.5 text-sm hover:bg-muted";
+  const linkClass = buttonVariants({ variant: "outline" });
   return (
     <nav aria-label="Pagination" className="flex items-center justify-between gap-4">
       {page > 1 ? (

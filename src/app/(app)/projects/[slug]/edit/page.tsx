@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PageHeader } from "@/components/page-header";
 import { FormSkeleton } from "@/components/project-form/form-skeleton";
 import { ProjectForm } from "@/components/project-form/project-form";
 import { toFormValues } from "@/lib/project-form";
@@ -14,7 +15,7 @@ export const metadata: Metadata = { title: "edit project" };
 
 export default function EditProjectPage({ params }: PageProps<"/projects/[slug]/edit">) {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <div className="flex flex-col gap-10">
       <Suspense fallback={<FormSkeleton />}>
         <EditProjectForm params={params} />
       </Suspense>
@@ -32,15 +33,18 @@ async function EditProjectForm({ params }: { params: Promise<{ slug: string }> }
 
   return (
     <>
-      <Link href={`/projects/${project.slug}`} className="text-sm text-muted-foreground hover:text-foreground">
+      <Link href={`/projects/${project.slug}`} className="text-sm text-soft-foreground hover:text-foreground">
         ← Back to {project.name}
       </Link>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Edit {project.name}</h1>
-        {project.review_status === "draft" && (
-          <p className="text-sm text-muted-foreground">This is a draft. Saving it approves it and makes it visible.</p>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Edit project"
+        title={project.name}
+        description={
+          project.review_status === "draft"
+            ? "This is a draft. Saving it approves it and makes it visible."
+            : `Its address stays /projects/${project.slug}.`
+        }
+      />
       <ProjectForm
         mode="edit"
         initial={toFormValues(project)}

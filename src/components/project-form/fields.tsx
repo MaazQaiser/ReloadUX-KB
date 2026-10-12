@@ -173,8 +173,8 @@ export function ChipGroup<K extends string>({
             <label
               key={option.value}
               className={cn(
-                "cursor-pointer rounded-full border px-3 py-1 text-sm transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring",
-                checked ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted",
+                "cursor-pointer border px-3 py-1.5 text-sm transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring",
+                checked ? "border-primary bg-primary text-primary-foreground" : "border-input text-soft-foreground hover:border-foreground hover:text-foreground",
               )}
             >
               <input

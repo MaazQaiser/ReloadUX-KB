@@ -47,8 +47,8 @@ function AddPerson({ onAdded }: { onAdded: (person: FormPerson, existed: boolean
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-dashed p-3">
-      <p className="text-sm font-medium">Someone missing?</p>
+    <div className="flex flex-col gap-3 border border-dashed p-5">
+      <p className="text-sm font-medium">Someone missing? Add them here.</p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
           <Label htmlFor="new-person-name">Name</Label>

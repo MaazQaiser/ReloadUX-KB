@@ -14,11 +14,12 @@ export const metadata: Metadata = { title: "sign in" };
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <main id="main" className="flex flex-1 items-center justify-center px-4 py-16">
-      <div className="flex w-full max-w-sm flex-col gap-6">
+      <div className="flex w-full max-w-md flex-col gap-10">
         <Wordmark />
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-          <p className="text-muted-foreground">Use your {ALLOWED_EMAIL_DOMAIN} Google account.</p>
+        <div className="flex flex-col gap-4">
+          <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">Project intelligence</p>
+          <h1 className="text-5xl leading-tight">Everything we&apos;ve built, one question away.</h1>
+          <p className="text-lg text-soft-foreground">Sign in with your {ALLOWED_EMAIL_DOMAIN} Google account.</p>
         </div>
         <Suspense fallback={<Skeleton className="h-10 w-full" />}>
           <SignInPanel searchParams={searchParams} />
@@ -35,9 +36,9 @@ async function SignInPanel({ searchParams }: { searchParams: PageProps<"/login">
   const config = getAuthConfig();
   if (!config) {
     return (
-      <div role="status" className="rounded-xl border border-dashed p-4 text-sm">
+      <div role="status" className="border border-dashed p-5 text-sm">
         <p className="font-medium">Sign-in isn&apos;t set up yet.</p>
-        <p className="text-muted-foreground">
+        <p className="text-soft-foreground">
           An admin needs to add the Firebase settings to the server environment (see .env.example). Until then, the app
           stays locked.
         </p>

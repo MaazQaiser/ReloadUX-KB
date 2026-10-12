@@ -14,9 +14,9 @@ export function AppHeader() {
       >
         Skip to content
       </a>
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-6 px-4">
+      <div className="mx-auto flex h-20 w-full max-w-7xl items-center gap-10 px-4 sm:px-8">
         <Wordmark />
-        <nav aria-label="Main" className="flex items-center gap-1">
+        <nav aria-label="Main" className="flex items-center gap-6">
           {/* The active link depends on the URL, which is only known at request time. */}
           <Suspense fallback={<StaticNavLinks items={NAV_ITEMS} />}>
             <NavLinks items={NAV_ITEMS} />

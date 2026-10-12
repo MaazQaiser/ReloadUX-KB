@@ -44,7 +44,7 @@ export function ProjectFiltersForm({ filters, options }: { filters: ProjectFilte
     <form action="/projects" method="get" role="search" aria-label="Filter projects" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="filter-q">Search</Label>
-        <Input id="filter-q" name="q" type="search" defaultValue={filters.q} placeholder="Project or client name" maxLength={100} />
+        <Input id="filter-q" name="q" type="search" className="h-12 text-base" defaultValue={filters.q} placeholder="Project or client name" maxLength={100} />
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <SelectField name="industry" label="Industry" value={filters.industry} options={tagOptions(INDUSTRY)} />
@@ -67,10 +67,10 @@ export function ProjectFiltersForm({ filters, options }: { filters: ProjectFilte
           options={options.years.map((year) => ({ value: String(year), label: String(year) }))}
         />
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <Button type="submit">Apply filters</Button>
-        <Link href="/projects" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
-          Clear
+        <Link href="/projects" className="text-sm text-soft-foreground underline-offset-4 hover:underline">
+          Clear all
         </Link>
       </div>
     </form>

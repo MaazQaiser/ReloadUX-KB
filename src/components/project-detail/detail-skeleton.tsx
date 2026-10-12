@@ -9,8 +9,8 @@ export function DetailSkeleton() {
         <Skeleton className="h-5 w-80" />
       </div>
       <div className="grid gap-10 lg:grid-cols-[1fr_20rem]">
-        <Skeleton className="h-96 rounded-xl" />
-        <Skeleton className="h-96 rounded-xl" />
+        <Skeleton className="h-96" />
+        <Skeleton className="h-96" />
       </div>
     </div>
   );

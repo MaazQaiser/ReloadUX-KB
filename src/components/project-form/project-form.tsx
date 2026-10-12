@@ -28,9 +28,9 @@ const LINK_FIELDS: { field: LinkField; legend: string; addLabel: string }[] = [
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-4 border-t pt-6">
-      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-      {children}
+    <section className="grid gap-6 border-t pt-8 lg:grid-cols-[14rem_1fr]">
+      <h2 className="text-2xl">{title}</h2>
+      <div className="flex flex-col gap-5">{children}</div>
     </section>
   );
 }
@@ -79,9 +79,10 @@ export function ProjectForm(props: FormProps) {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-8">
+    // The page header already draws a rule, so the first section skips its own.
+    <form onSubmit={submit} noValidate className="flex flex-col gap-8 [&>section:first-of-type]:border-t-0 [&>section:first-of-type]:pt-0">
       {message && (
-        <div ref={summaryRef} tabIndex={-1} role="alert" className="rounded-lg border border-destructive/50 p-4 text-sm">
+        <div ref={summaryRef} tabIndex={-1} role="alert" className="border border-destructive p-5 text-sm">
           <p className="font-medium text-destructive">{message}</p>
           {errorList.length > 0 && (
             <ul className="mt-2 list-disc pl-5">
@@ -196,11 +197,11 @@ export function ProjectForm(props: FormProps) {
         <p className="text-sm text-muted-foreground">Screenshot uploads arrive in a later phase.</p>
       </Section>
 
-      <div className="flex items-center gap-3 border-t pt-6">
-        <Button type="submit" disabled={pending}>
+      <div className="sticky bottom-0 flex items-center gap-4 border-t bg-background py-5">
+        <Button type="submit" size="lg" disabled={pending}>
           {pending ? "Saving…" : props.mode === "edit" ? "Save changes" : "Create project"}
         </Button>
-        <Link href={props.mode === "edit" ? `/projects/${props.project.slug}` : "/projects"} className="text-sm text-muted-foreground hover:text-foreground">
+        <Link href={props.mode === "edit" ? `/projects/${props.project.slug}` : "/projects"} className="text-sm text-soft-foreground hover:text-foreground">
           Cancel
         </Link>
       </div>

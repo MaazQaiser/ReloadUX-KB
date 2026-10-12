@@ -6,20 +6,19 @@ import { DetailSection, Field, FieldList, NotRecorded } from "./section";
 
 export function ProjectHeader({ project }: { project: Project }) {
   return (
-    <header className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{project.name}</h1>
+    <header className="flex flex-col gap-4">
+      <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
+        {INDUSTRY.labels[project.industry]} · {PROJECT_STATUS.labels[project.status]}
+      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-4xl leading-tight sm:text-6xl">{project.name}</h1>
         {project.nda && <Badge variant="outline">NDA</Badge>}
       </div>
-      <p className="text-muted-foreground">
+      <p className="text-lg text-soft-foreground">
         {project.client_name ?? "Client not recorded"}
         {project.country && ` · ${project.country}`}
       </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge>{INDUSTRY.labels[project.industry]}</Badge>
-        <Badge variant="secondary">{PROJECT_STATUS.labels[project.status]}</Badge>
-        <TagBadges list={PRODUCT_TYPE} values={project.product_types} variant="outline" />
-      </div>
+      <TagBadges list={PRODUCT_TYPE} values={project.product_types} variant="outline" />
     </header>
   );
 }
@@ -37,7 +36,7 @@ export function ProjectMain({ project }: { project: Project }) {
   return (
     <div className="flex flex-col gap-8">
       <DetailSection title="Summary">
-        <p className="leading-relaxed">{project.summary}</p>
+        <p className="font-heading text-2xl leading-relaxed">{project.summary}</p>
       </DetailSection>
 
       <DetailSection title="Scope">
@@ -63,15 +62,15 @@ export function ProjectMain({ project }: { project: Project }) {
           <div className="flex flex-col gap-4">
             {story.map(([field, label]) => (
               <div key={field} className="flex flex-col gap-1">
-                <h3 className="font-medium">{label}</h3>
-                <p className="leading-relaxed text-muted-foreground">{project[field]}</p>
+                <h3 className="text-lg font-medium">{label}</h3>
+                <p className="leading-relaxed text-soft-foreground">{project[field]}</p>
               </div>
             ))}
             {project.metrics.length > 0 && (
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <ul className="grid grid-cols-2 border-t border-l sm:grid-cols-3">
                 {project.metrics.map((metric) => (
-                  <li key={metric.label} className="rounded-lg border p-3">
-                    <p className="text-xl font-semibold">{metric.value}</p>
+                  <li key={metric.label} className="border-r border-b p-5">
+                    <p className="font-heading text-4xl">{metric.value}</p>
                     <p className="text-sm text-muted-foreground">{metric.label}</p>
                   </li>
                 ))}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PageHeader } from "@/components/page-header";
 import { FormSkeleton } from "@/components/project-form/form-skeleton";
 import { ProjectForm } from "@/components/project-form/project-form";
 import { emptyFormValues } from "@/lib/project-form";
@@ -11,14 +12,15 @@ export const metadata: Metadata = { title: "new project" };
 
 export default function NewProjectPage() {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <Link href="/projects" className="text-sm text-muted-foreground hover:text-foreground">
+    <div className="flex flex-col gap-10">
+      <Link href="/projects" className="text-sm text-soft-foreground hover:text-foreground">
         ← All projects
       </Link>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Add a project</h1>
-        <p className="text-muted-foreground">Fields marked * are required. Everything else adds to the completeness score.</p>
-      </div>
+      <PageHeader
+        eyebrow="New project"
+        title="Add a project"
+        description="Fields marked * are required. Everything else adds to the completeness score."
+      />
       <Suspense fallback={<FormSkeleton />}>
         <NewProjectForm />
       </Suspense>

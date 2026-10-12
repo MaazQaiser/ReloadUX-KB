@@ -6,7 +6,7 @@ export function CompletenessMeter({ completeness }: { completeness: Completeness
   return (
     <DetailSection title="Completeness">
       <div className="flex items-baseline justify-between text-sm">
-        <span className="text-2xl font-semibold">{score}%</span>
+        <span className="font-heading text-4xl">{score}%</span>
         <span className="text-muted-foreground">
           {filled} of {total} optional fields
         </span>
@@ -17,9 +17,9 @@ export function CompletenessMeter({ completeness }: { completeness: Completeness
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={score}
-        className="h-2 overflow-hidden rounded-full bg-muted"
+        className="h-1 overflow-hidden bg-muted"
       >
-        <div className="h-full rounded-full bg-primary" style={{ width: `${score}%` }} />
+        <div className="h-full bg-primary" style={{ width: `${score}%` }} />
       </div>
       {missing.length > 0 && (
         <p className="text-sm text-muted-foreground">
