@@ -45,24 +45,23 @@ export function AskChat({ starters }: { starters: readonly string[] }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-10">
+    // Bottom padding keeps the last answer clear of the floating ask bar.
+    <div className="flex flex-1 flex-col gap-10 pb-36">
       {turns.length === 0 ? (
-        <div className="flex flex-col gap-4">
-          <h2 className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">Try asking</h2>
-          <ul className="grid border-t border-l sm:grid-cols-2">
+        <section aria-labelledby="try-asking" className="rx-glow-band -mx-4 flex flex-col items-center gap-8 px-4 py-16 text-center sm:-mx-8 sm:py-24">
+          <h2 id="try-asking" className="max-w-2xl text-2xl sm:text-3xl">
+            Try asking
+          </h2>
+          <ul className="flex max-w-3xl flex-wrap justify-center gap-3">
             {starters.map((starter) => (
-              <li key={starter} className="border-r border-b">
-                <button
-                  type="button"
-                  onClick={() => send(starter)}
-                  className="h-full w-full p-6 text-left text-lg transition-colors hover:bg-card focus-visible:bg-card focus-visible:outline-none"
-                >
+              <li key={starter}>
+                <Button type="button" variant="chip" size="lg" onClick={() => send(starter)} className="h-auto min-h-13.5 text-sm whitespace-normal">
                   {starter}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : (
         <ol className="flex flex-col gap-10" aria-label="Conversation">
           {turns.map((turn) => (
@@ -76,11 +75,18 @@ export function AskChat({ starters }: { starters: readonly string[] }) {
       </p>
       <div ref={endRef} />
 
-      <form onSubmit={onSubmit} className="sticky bottom-0 mt-auto flex flex-col gap-2 border-t bg-background pt-4 pb-6">
+      {/* Floats over the page like the reloadux.com ask bar; only the pill takes clicks. */}
+      <form
+        onSubmit={onSubmit}
+        className="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-40 flex flex-col items-center gap-2 px-4"
+      >
         <Label htmlFor="ask-question" className="sr-only">
           Ask about past projects
         </Label>
-        <div className="flex items-end gap-3">
+        <div className="pointer-events-auto flex w-full max-w-3xl items-center gap-2 rounded-[1.8rem] border border-pill-border bg-pill px-3 py-2.5 shadow-[0_8px_32px_rgb(0_0_0/0.5)] focus-within:border-muted-foreground md:gap-3 md:px-4.5 md:py-3.5">
+          <span aria-hidden className="rx-gradient-ring size-8 shrink-0 p-0.5 md:size-9.5">
+            <span className="grid size-full place-items-center rounded-full bg-[#d9d9d9] text-xs font-extrabold text-black">UX</span>
+          </span>
           <Textarea
             ref={inputRef}
             id="ask-question"
@@ -89,22 +95,24 @@ export function AskChat({ starters }: { starters: readonly string[] }) {
             onChange={(event) => setQuestion(event.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Have we done a healthcare chatbot?"
-            className="max-h-48 min-h-12 text-base"
+            aria-describedby="ask-hint"
+            className="max-h-48 min-h-0 rounded-none border-0 bg-transparent px-0 py-1 text-base focus-visible:ring-0 dark:bg-transparent md:text-base"
+            rows={1}
             autoFocus
           />
           {busy ? (
-            <Button type="button" variant="outline" size="lg" onClick={stop}>
+            <Button type="button" variant="secondary" size="icon-lg" onClick={stop} aria-label="Stop" className="rounded-full bg-pill-border">
               <Square aria-hidden />
-              Stop
             </Button>
           ) : (
-            <Button type="submit" size="lg" disabled={!question.trim()}>
+            <Button type="submit" variant="secondary" size="icon-lg" disabled={!question.trim()} aria-label="Ask" className="rounded-full bg-pill-border text-foreground disabled:opacity-40">
               <ArrowUp aria-hidden />
-              Ask
             </Button>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">Enter to send, Shift+Enter for a new line.</p>
+        <p id="ask-hint" className="pointer-events-auto text-xs text-muted-foreground">
+          Enter to send, Shift+Enter for a new line.
+        </p>
       </form>
     </div>
   );

@@ -12,7 +12,7 @@ function NavAnchor({ item, active }: { item: NavItem; active: boolean }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "px-1 py-1 text-base text-soft-foreground underline-offset-8 transition-colors hover:text-foreground",
+        "px-1 py-1 text-sm text-soft-foreground underline-offset-8 transition-[color,opacity] hover:text-foreground hover:opacity-70",
         active && "text-foreground underline decoration-1",
       )}
     >
