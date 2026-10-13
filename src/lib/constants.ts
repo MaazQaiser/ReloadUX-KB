@@ -107,3 +107,22 @@ export const SESSION_COOKIE_NAME = "__session";
 
 /** Slugs that would collide with routes under /projects. */
 export const RESERVED_PROJECT_SLUGS: readonly string[] = ["new"];
+
+/** How an answer opens (SPEC.md answer rule 1): "partly" means similar but not exact. */
+export const ANSWER_VERDICT = tagList({
+  yes: "Yes",
+  partly: "Partly",
+  no: "No",
+});
+
+/** Shown on the empty Ask screen so people see the kind of question that works. */
+export const STARTER_QUESTIONS: readonly string[] = [
+  "Have we done a healthcare chatbot?",
+  "Which fintech mobile apps have we designed?",
+  "Show me dashboards we've built for HR or legal teams.",
+  "Have we built a VR game?",
+];
+
+/** Long enough for a pasted brief, short enough to keep a single turn cheap. */
+export const MAX_QUESTION_LENGTH = 1000;
+export const MAX_FEEDBACK_NOTE_LENGTH = 1000;

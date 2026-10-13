@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { User } from "@/schemas/user";
-import { requireRole } from "./require-role";
+import { requireApiRole, requireRole } from "./require-role";
 import * as session from "./session";
 
 vi.mock("./session");
@@ -30,5 +30,22 @@ describe("requireRole", () => {
   it("returns the user when the role is enough", async () => {
     vi.mocked(session.getSessionUser).mockResolvedValue({ ...viewer, role: "admin" });
     await expect(requireRole("editor")).resolves.toMatchObject({ role: "admin" });
+  });
+});
+
+describe("requireApiRole", () => {
+  it("reports a missing session instead of redirecting", async () => {
+    vi.mocked(session.getSessionUser).mockResolvedValue(null);
+    await expect(requireApiRole("viewer")).resolves.toEqual({ ok: false, error: "unauthenticated" });
+  });
+
+  it("reports a role that is too low", async () => {
+    vi.mocked(session.getSessionUser).mockResolvedValue(viewer);
+    await expect(requireApiRole("editor")).resolves.toEqual({ ok: false, error: "forbidden" });
+  });
+
+  it("returns the user when the role is enough", async () => {
+    vi.mocked(session.getSessionUser).mockResolvedValue(viewer);
+    await expect(requireApiRole("viewer")).resolves.toEqual({ ok: true, value: viewer });
   });
 });

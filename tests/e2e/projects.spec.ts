@@ -4,10 +4,9 @@ import { VIEWER } from "./helpers";
 test.use({ storageState: VIEWER.state });
 
 test.describe("projects grid", () => {
-  test("home redirects to the grid, which lists every seeded project", async ({ page }) => {
-    await page.goto("/");
+  test("lists every seeded project", async ({ page }) => {
+    await page.goto("/projects");
 
-    await expect(page).toHaveURL(/\/projects$/);
     await expect(page.getByRole("heading", { level: 1, name: "projects" })).toBeVisible();
     // Other specs add projects in parallel, so check the seeded ones rather than a count.
     for (const name of ["Calmly Care", "Ledgerly", "Questline", "Learnloop"]) {

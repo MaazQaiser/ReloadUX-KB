@@ -3,7 +3,10 @@ import { UserMenu } from "./auth/user-menu";
 import { NavLinks, StaticNavLinks, type NavItem } from "./nav-link";
 import { Wordmark } from "./wordmark";
 
-const NAV_ITEMS: NavItem[] = [{ href: "/projects", label: "projects" }];
+const NAV_ITEMS: NavItem[] = [
+  { href: "/", label: "ask" },
+  { href: "/projects", label: "projects" },
+];
 
 export function AppHeader() {
   return (
