@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AskChat } from "@/components/ask/ask-chat";
-import { Eyebrow } from "@/components/page-header";
-import { PreviewBadge } from "@/components/preview-badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { STARTER_QUESTIONS } from "@/lib/constants";
 import { requireRole } from "@/server/auth";
 
 export const metadata: Metadata = { title: "home" };
 
-/** Home is the chat: a greeting, suggestions to get started, and the ask box. */
+/** Home is the chat: a centred welcome with suggestions, then the conversation. */
 export default function HomePage() {
   return (
-    <div className="flex flex-1 flex-col gap-10">
-      <Suspense fallback={<Greeting />}>
+    <div className="flex flex-1 flex-col">
+      <Suspense fallback={<HomeSkeleton />}>
         <SignedInHome />
       </Suspense>
     </div>
@@ -21,33 +20,20 @@ export default function HomePage() {
 
 async function SignedInHome() {
   const user = await requireRole("viewer");
-  return (
-    <>
-      <Greeting name={firstName(user.name)} />
-      <AskChat starters={STARTER_QUESTIONS} />
-    </>
-  );
+  return <AskChat starters={STARTER_QUESTIONS} name={firstName(user.name)} />;
 }
 
-/** Names come from Google; fall back to a plain hello when the name is an email address. */
+/** Names come from Google; an email address in its place isn't a name to greet. */
 function firstName(name: string): string | undefined {
   const first = name.trim().split(/\s+/)[0];
   return first && !first.includes("@") ? first : undefined;
 }
 
-function Greeting({ name }: { name?: string }) {
+function HomeSkeleton() {
   return (
-    <div className="flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:pb-10">
-      <div className="flex max-w-3xl flex-col gap-3 sm:gap-4">
-        <Eyebrow>Welcome</Eyebrow>
-        <h1 className="text-3xl leading-tight sm:text-6xl">{name ? `Hi ${name}, what have we built?` : "What have we built?"}</h1>
-        {/* Hidden on phones so the suggestions show above the floating ask bar without scrolling. */}
-        <p className="hidden text-lg text-soft-foreground sm:block">
-          Ask about any past reloadux project in plain words, or start with a suggestion below. Answers begin with Yes,
-          Partly or No and link to the projects they came from.
-        </p>
-      </div>
-      <PreviewBadge />
+    <div aria-hidden className="flex flex-1 flex-col items-center justify-center gap-4">
+      <Skeleton className="h-12 w-full max-w-lg" />
+      <Skeleton className="h-5 w-full max-w-sm" />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { ArrowUp, Square } from "lucide-react";
+import { PreviewBadge } from "@/components/preview-badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +10,8 @@ import { MAX_QUESTION_LENGTH } from "@/lib/constants";
 import { AnswerTurn } from "./answer-turn";
 import { useAsk } from "./use-ask";
 
-export function AskChat({ starters }: { starters: readonly string[] }) {
+/** `name` is the signed-in person's first name, for the welcome; it may be missing. */
+export function AskChat({ starters, name }: { starters: readonly string[]; name?: string }) {
   const { turns, ask, stop, busy } = useAsk();
   const [question, setQuestion] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
@@ -48,26 +50,47 @@ export function AskChat({ starters }: { starters: readonly string[] }) {
     // Bottom padding keeps the last answer clear of the floating ask bar.
     <div className="flex flex-1 flex-col gap-10 pb-36">
       {turns.length === 0 ? (
-        <section aria-labelledby="try-asking" className="rx-glow-band -mx-4 flex flex-col items-center gap-8 px-4 py-16 text-center sm:-mx-8 sm:py-24">
-          <h2 id="try-asking" className="max-w-2xl text-2xl sm:text-3xl">
-            Try asking
-          </h2>
-          <ul className="flex max-w-3xl flex-wrap justify-center gap-3">
+        // The welcome fills the space above the ask bar, centred, until the first question.
+        <section
+          aria-labelledby="ask-welcome"
+          className="rx-glow-band -mx-4 flex flex-1 flex-col items-center justify-center gap-6 px-4 py-6 text-center sm:-mx-8 sm:gap-10 sm:py-12"
+        >
+          <div className="flex flex-col items-center gap-3 sm:gap-4">
+            <PreviewBadge />
+            <h1 id="ask-welcome" className="max-w-3xl text-3xl leading-tight sm:text-5xl">
+              {name ? `Hey ${name}, I'm here to help.` : "Hi, I'm here to help."}
+            </h1>
+            <p className="max-w-xl text-base text-soft-foreground sm:text-lg">
+              Tell me what you&apos;re looking for and I&apos;ll find the relevant work.
+            </p>
+          </div>
+          {/* One swipeable row on phones so the suggestions stay above the ask bar; wrapped and centred from sm up. */}
+          <ul
+            aria-label="Suggestions"
+            className="-mx-4 flex w-[calc(100%+2rem)] max-w-none snap-x scroll-px-4 gap-3 overflow-x-auto px-4 py-2 sm:mx-0 sm:w-auto sm:max-w-3xl sm:flex-wrap sm:justify-center sm:overflow-visible"
+          >
             {starters.map((starter) => (
-              <li key={starter}>
-                <Button type="button" variant="chip" size="lg" onClick={() => send(starter)} className="h-auto min-h-13.5 text-sm whitespace-normal">
+              <li key={starter} className="shrink-0 snap-start">
+                <button
+                  type="button"
+                  onClick={() => send(starter)}
+                  className="rx-glass px-5 py-3 text-sm whitespace-nowrap text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                >
                   {starter}
-                </Button>
+                </button>
               </li>
             ))}
           </ul>
         </section>
       ) : (
-        <ol className="flex flex-col gap-10" aria-label="Conversation">
-          {turns.map((turn) => (
-            <AnswerTurn key={turn.key} turn={turn} />
-          ))}
-        </ol>
+        <>
+          <h1 className="sr-only">Ask about projects</h1>
+          <ol className="flex flex-col gap-10" aria-label="Conversation">
+            {turns.map((turn) => (
+              <AnswerTurn key={turn.key} turn={turn} />
+            ))}
+          </ol>
+        </>
       )}
 
       <p role="status" className="sr-only">
