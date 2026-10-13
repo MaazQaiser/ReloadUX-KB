@@ -8,6 +8,7 @@
   --color-background: var(--background);
   --color-soft-foreground: var(--soft-foreground);
   --color-rx-purple: var(--rx-purple);
+  --color-rx-lilac: var(--rx-lilac);
   --color-rx-night: var(--rx-night);
   --color-rx-indigo-from: var(--rx-indigo-from);
   --color-rx-indigo-to: var(--rx-indigo-to);
@@ -94,6 +95,7 @@
   --soft-foreground: #d1d1d1;
   /* reloadux.com accents: purple is light and hover only, never a fill for actions. */
   --rx-purple: #7f56d9;
+  --rx-lilac: #d8b4fe;
   --rx-night: #090909;
   --rx-indigo-from: #1d1c36;
   --rx-indigo-to: #47467a;
@@ -145,6 +147,25 @@
   }
 }
 
+/* Faint light from the top-left of every signed-in page, like the site's hero. */
+@utility rx-page-glow {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 36rem;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      55% 100% at 0% 0%,
+      color-mix(in srgb, var(--rx-purple) 16%, transparent),
+      transparent 70%
+    );
+  }
+}
+
 /* The "Shipping an AI product?" panel: near-black with light from the top-left corner. */
 @utility rx-corner-glow {
   background-color: var(--rx-night);
@@ -166,7 +187,7 @@
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    background: conic-gradient(#7c3aed, #a855f7, #d8b4fe, #a855f7, #7c3aed);
+    background: conic-gradient(#7c3aed, #a855f7, var(--rx-lilac), #a855f7, #7c3aed);
     animation: rx-spin 4s linear infinite;
   }
   @media (prefers-reduced-motion: reduce) {
