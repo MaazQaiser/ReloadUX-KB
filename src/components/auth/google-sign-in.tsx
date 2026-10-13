@@ -14,6 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { GoogleIcon } from "./google-icon";
 
 export interface FirebaseWebConfig {
   apiKey: string;
@@ -89,6 +90,7 @@ export function GoogleSignIn({ config, next }: { config: FirebaseWebConfig; next
   return (
     <div className="flex flex-col gap-3">
       <Button onClick={signIn} disabled={working} size="lg" className="w-full">
+        <GoogleIcon className="size-5" />
         {working ? "Continuing…" : "Continue with Google"}
       </Button>
       <p role="alert" aria-live="polite" className="min-h-5 text-sm text-destructive">
