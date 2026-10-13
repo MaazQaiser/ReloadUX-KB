@@ -12,10 +12,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PROJECT_STATUS } from "@/lib/constants";
+import { applySuggestion } from "@/lib/fill-from-text";
 import { tagOptions as catalogOptions, type TagCatalog } from "@/lib/tag-catalog";
 import { toSlug } from "@/lib/slug";
 import type { LinkField, ProjectFormValues } from "@/schemas/project-form";
 import { ChipGroup, fieldId, SelectField, TextAreaField, TextField } from "./fields";
+import { FillFromText } from "./fill-from-text";
 import { PeopleFields } from "./people-fields";
 import { RowList } from "./row-list";
 
@@ -98,6 +100,8 @@ export function ProjectForm(props: FormProps) {
           )}
         </div>
       )}
+
+      <FillFromText catalog={props.catalog} onApply={(suggestion) => setValues((current) => applySuggestion(current, suggestion))} />
 
       <Section title="Basics">
         <div className="grid gap-4 sm:grid-cols-2">
