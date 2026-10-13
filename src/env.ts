@@ -139,3 +139,29 @@ export function getAuthConfig(): AuthConfig | null {
   if (cachedAuth === undefined) cachedAuth = parseAuthConfig(process.env);
   return cachedAuth;
 }
+
+export interface Integrations {
+  anthropic: boolean;
+  voyage: boolean;
+  r2: boolean;
+}
+
+const R2_VARIABLES = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"] as const;
+
+/**
+ * Which outside services have credentials, so screens can say "not connected"
+ * instead of failing. Presence only: each client validates its own settings
+ * when it's wired up.
+ */
+export function parseIntegrations(source: EnvSource): Integrations {
+  const set = (name: string) => Boolean(source[name]?.trim());
+  return {
+    anthropic: set("ANTHROPIC_API_KEY"),
+    voyage: set("VOYAGE_API_KEY"),
+    r2: R2_VARIABLES.every(set),
+  };
+}
+
+export function getIntegrations(): Integrations {
+  return parseIntegrations(process.env);
+}

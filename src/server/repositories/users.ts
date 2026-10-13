@@ -31,8 +31,10 @@ export async function upsertUserOnSignIn(
   const identity = signInSchema.parse(input);
   const now = new Date();
 
+  // Match on the verified email: the Firebase uid changes if the Firebase project does,
+  // and the person (and their role) should carry over.
   const saved = await (await users()).findOneAndUpdate(
-    { firebase_uid: identity.firebase_uid },
+    { email: identity.email },
     {
       $set: {
         ...identity,

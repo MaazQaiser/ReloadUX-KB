@@ -2,12 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { NavItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
-export interface NavItem {
-  href: string;
-  label: string;
-}
 
 function NavAnchor({ item, active }: { item: NavItem; active: boolean }) {
   return (

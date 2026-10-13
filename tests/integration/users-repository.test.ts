@@ -49,6 +49,16 @@ describe("upsertUserOnSignIn", () => {
     expect(promoted.role).toBe("admin");
   });
 
+  it("keeps the same person and role when their Firebase uid changes", async () => {
+    const first = await upsertUserOnSignIn(sara, { promoteToAdmin: false });
+    await (await collection()).updateOne({ firebase_uid: "uid-sara" }, { $set: { role: "editor" } });
+
+    const again = await upsertUserOnSignIn({ ...sara, firebase_uid: "uid-sara-new-project" }, { promoteToAdmin: false });
+
+    expect(again).toMatchObject({ id: first.id, firebase_uid: "uid-sara-new-project", role: "editor" });
+    expect(await findUserByFirebaseUid("uid-sara-new-project")).toMatchObject({ id: first.id });
+  });
+
   it("never demotes an admin", async () => {
     await upsertUserOnSignIn(sara, { promoteToAdmin: true });
     expect((await upsertUserOnSignIn(sara, { promoteToAdmin: false })).role).toBe("admin");

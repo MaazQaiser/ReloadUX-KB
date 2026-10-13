@@ -191,3 +191,28 @@ export async function listDeliveryYears(): Promise<number[]> {
     .toArray();
   return rows.map((row) => row._id);
 }
+
+/** Drafts waiting for review (migration, admin chat), oldest first so nothing waits forever. */
+export async function listDraftProjects(): Promise<Project[]> {
+  const documents = await (await projects())
+    .find({ review_status: "draft", deleted_at: { $exists: false } })
+    .sort({ updated_at: 1 })
+    .toArray();
+  return documents.map(toProject);
+}
+
+/** Approves a draft as it stands; null if it isn't a live draft any more. */
+export async function approveProjectById(id: string, actor: Actor): Promise<Project | null> {
+  const saved = await (await projects()).findOneAndUpdate(
+    { _id: toObjectId(id), review_status: "draft", deleted_at: { $exists: false } },
+    { $set: { review_status: "approved", updated_by: actorSchema.parse(actor), updated_at: new Date() } },
+    { returnDocument: "after" },
+  );
+  return saved ? toProject(saved) : null;
+}
+
+/** Every visible project, for analytics over the whole library (100s, not 1000s, of records). */
+export async function listAllVisibleProjects(): Promise<Project[]> {
+  const documents = await (await projects()).find(VISIBLE).toArray();
+  return documents.map(toProject);
+}

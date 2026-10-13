@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EnvError, parseAuthConfig, parseServerEnv } from "./env";
+import { EnvError, parseAuthConfig, parseIntegrations, parseServerEnv } from "./env";
 
 const valid = {
   MONGODB_URI: "mongodb+srv://user:s3cret@cluster0.example.mongodb.net",
@@ -100,5 +100,20 @@ describe("parseAuthConfig", () => {
     expect(() =>
       parseAuthConfig({ ...web, FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099", NODE_ENV: "production" }),
     ).toThrow(/must not be set in production/);
+  });
+});
+
+describe("parseIntegrations", () => {
+  it("reports each service as connected only when all its keys are set", () => {
+    expect(parseIntegrations({})).toEqual({ anthropic: false, voyage: false, r2: false });
+    expect(
+      parseIntegrations({
+        ANTHROPIC_API_KEY: "a",
+        VOYAGE_API_KEY: " ",
+        R2_ACCOUNT_ID: "x",
+        R2_ACCESS_KEY_ID: "x",
+        R2_SECRET_ACCESS_KEY: "x",
+      }),
+    ).toEqual({ anthropic: true, voyage: false, r2: false });
   });
 });
