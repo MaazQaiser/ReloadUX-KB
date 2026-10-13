@@ -14,7 +14,7 @@ export function ProjectCard({ item: { project, leadDesigner, completeness }, cat
     : PROJECT_STATUS.labels[project.status];
 
   return (
-    <article className="group relative flex h-full flex-col gap-5 bg-background p-6 transition-colors focus-within:bg-card hover:bg-card sm:p-8">
+    <article className="group rx-hover-wash flex h-full flex-col gap-5 bg-background p-6 sm:p-8">
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
           {tagLabel(catalog.industry, project.industry)} · {when}
@@ -25,7 +25,7 @@ export function ProjectCard({ item: { project, leadDesigner, completeness }, cat
         </div>
       </div>
       <div className="flex flex-col gap-2">
-        <h2 className="text-2xl leading-snug">
+        <h2 className="font-heading text-2xl leading-snug font-normal">
           {/* The stretched link makes the whole tile clickable with one tab stop. */}
           <Link
             href={`/projects/${project.slug}`}

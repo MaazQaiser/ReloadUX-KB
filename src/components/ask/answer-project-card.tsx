@@ -9,11 +9,11 @@ const BUILT_IN = builtInCatalog();
 
 export function AnswerProjectCard({ project }: { project: AnswerProject }) {
   return (
-    <article className="flex h-full flex-col gap-3 border bg-card p-5">
+    <article className="rx-hover-wash flex h-full flex-col gap-3 border border-white/15 bg-card p-5 transition-[border-color] duration-400 focus-within:border-transparent hover:border-transparent">
       <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
         {tagLabel(BUILT_IN.industry, project.industry)}
       </p>
-      <h3 className="text-xl leading-snug">
+      <h3 className="font-heading text-xl leading-snug">
         <Link href={`/projects/${project.slug}`} className="underline-offset-4 hover:underline">
           {project.name}
         </Link>
