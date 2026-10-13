@@ -1,13 +1,22 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { StatusScreen } from "@/components/status-screen";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col items-start gap-3 px-4 py-16">
-      <h1 className="text-xl font-semibold tracking-tight">Page not found</h1>
-      <p className="text-muted-foreground">There&apos;s nothing at this address.</p>
-      <Link href="/projects" className="underline underline-offset-4">
-        Go to projects
-      </Link>
+    <main className="flex flex-1 flex-col">
+      <StatusScreen
+        eyebrow="404"
+        title="Page not found"
+        description="There's nothing at this address."
+        action={
+          <Link href="/projects" className={buttonVariants({ size: "lg" })}>
+            Go to projects
+            <ArrowRight data-icon="inline-end" aria-hidden />
+          </Link>
+        }
+      />
     </main>
   );
 }

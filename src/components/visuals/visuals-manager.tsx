@@ -143,7 +143,7 @@ export function VisualsManager({ slug, visuals, flows }: { slug: string; visuals
     <section aria-labelledby="visuals-heading" className="grid gap-6 border-t pt-8 lg:grid-cols-[14rem_1fr]">
       <h2 id="visuals-heading" className="text-2xl">Visuals</h2>
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-3 border border-dashed p-6">
+        <div className="flex flex-col gap-3 rx-corner-glow border border-white/10 p-6">
           <Label htmlFor="visual-upload">Add screenshots</Label>
           <p id="visual-upload-hint" className="text-sm text-muted-foreground">
             3 to 8 final screens is plenty. PNG, JPG or WebP, up to 10 MB each, 10 at a time.

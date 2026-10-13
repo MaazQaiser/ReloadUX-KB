@@ -57,7 +57,7 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
       </div>
 
       {page.items.length === 0 ? (
-        <div className="flex flex-col items-start gap-3 border border-dashed p-10">
+        <div className="flex flex-col items-start gap-3 rx-corner-glow border border-white/10 p-10">
           <h2 className="text-2xl">No projects found</h2>
           <p className="text-soft-foreground">
             {hasFilters ? "Nothing matches these filters. Try removing one." : "No approved projects have been added yet."}

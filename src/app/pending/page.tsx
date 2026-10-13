@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "waiting for approval" };
 
 export default function PendingPage() {
   return (
-    <main id="main" className="flex flex-1 items-center justify-center px-4 py-16">
+    <main id="main" className="rx-glow-band flex flex-1 items-center justify-center px-4 py-16">
       <div className="flex w-full max-w-md flex-col gap-10">
         <Wordmark />
         <Suspense fallback={null}>
@@ -33,7 +33,7 @@ async function PendingNotice() {
         We&apos;ve recorded {user.email}. Once an admin approves you in Settings, sign in again or refresh this page.
       </p>
       <form action="/api/auth/signout" method="post">
-        <button type="submit" className={buttonVariants({ variant: "outline" })}>
+        <button type="submit" className={buttonVariants({ variant: "outline", size: "lg" })}>
           Sign out
         </button>
       </form>

@@ -56,7 +56,7 @@ async function ReviewView() {
           Approved answers the agent starts from when a new question is very similar. It still checks the linked
           projects are current before answering.
         </p>
-        <div className="border border-dashed p-6">
+        <div className="rx-corner-glow border border-white/10 p-6">
           <VerifiedAnswerForm projects={projects} />
         </div>
         {answers.length > 0 && (

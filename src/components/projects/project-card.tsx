@@ -54,7 +54,7 @@ export function ProjectCard({ item: { project, leadDesigner, completeness }, cat
             aria-valuenow={completeness.score}
             className="h-1 w-12 overflow-hidden bg-muted"
           >
-            <div className="h-full bg-primary" style={{ width: `${completeness.score}%` }} />
+            <div className="h-full bg-linear-to-r from-rx-purple to-rx-lilac" style={{ width: `${completeness.score}%` }} />
           </div>
           <span className="tabular-nums">{completeness.score}%</span>
         </div>

@@ -40,7 +40,7 @@ async function SignInPanel({ searchParams }: { searchParams: PageProps<"/login">
   const config = getAuthConfig();
   if (!config) {
     return (
-      <div role="status" className="border border-dashed p-5 text-sm">
+      <div role="status" className="rx-corner-glow border border-white/10 p-5 text-sm">
         <p className="font-medium">Sign-in isn&apos;t set up yet.</p>
         <p className="text-soft-foreground">
           An admin needs to add the Firebase settings to the server environment (see .env.example). Until then, the app

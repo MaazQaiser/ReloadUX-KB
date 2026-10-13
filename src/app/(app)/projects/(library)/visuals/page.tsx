@@ -61,7 +61,7 @@ async function VisualsView({ searchParams }: { searchParams: PageProps<"/project
       </form>
 
       {results.length === 0 ? (
-        <div className="flex flex-col items-start gap-3 border border-dashed p-8">
+        <div className="flex flex-col items-start gap-3 rx-corner-glow border border-white/10 p-8">
           <h2 className="text-2xl">{filtered ? "No screens match" : "No screenshots yet"}</h2>
           <p className="max-w-2xl text-soft-foreground">
             {filtered
