@@ -13,6 +13,7 @@ import { getIntegrations } from "@/env";
 import { requireRole } from "@/server/auth";
 import { getLibraryHealth } from "@/server/services/analytics";
 import { getAskAnalytics } from "@/server/services/learning";
+import { getTagCatalog } from "@/server/services/tags";
 import { listUsersForSettings } from "@/server/services/users";
 
 export const metadata: Metadata = { title: "settings" };
@@ -34,13 +35,18 @@ export default function SettingsPage() {
 
 async function SettingsView() {
   const admin = await requireRole("admin");
-  const [users, health, ask] = await Promise.all([listUsersForSettings(), getLibraryHealth(), getAskAnalytics()]);
+  const [users, health, ask, catalog] = await Promise.all([
+    listUsersForSettings(),
+    getLibraryHealth(),
+    getAskAnalytics(),
+    getTagCatalog(),
+  ]);
   return (
     <div className="flex flex-col gap-12">
       <UsersSection users={users} currentUserId={admin.id} />
       <IntegrationsSection integrations={getIntegrations()} />
       <LibraryHealthSection health={health} ask={ask} />
-      <TagListsSection />
+      <TagListsSection catalog={catalog} />
       <EvalSection />
     </div>
   );

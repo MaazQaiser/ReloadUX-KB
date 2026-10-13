@@ -2,11 +2,13 @@ import Link from "next/link";
 import { DetailSection } from "@/components/project-detail/section";
 import { Badge } from "@/components/ui/badge";
 import type { Integrations } from "@/env";
-import { AI_FEATURE, FLOW, INDUSTRY, PRODUCT_TYPE, PROJECT_STATUS, SERVICE, type TagList } from "@/lib/constants";
+import { TAG_LIST_NAMES, TAG_LIST_TITLES } from "@/lib/constants";
+import { tagLabel, type TagCatalog } from "@/lib/tag-catalog";
 import { formatDate } from "@/lib/format";
 import type { User } from "@/schemas/user";
 import type { AskStats } from "@/server/repositories/conversations";
 import type { LibraryHealth } from "@/server/services/analytics";
+import { AddTagForm } from "./add-tag-form";
 import { ApproveForm } from "./approve-form";
 import { RoleForm } from "./role-form";
 
@@ -141,36 +143,38 @@ export function LibraryHealthSection({ health, ask }: { health: LibraryHealth; a
   );
 }
 
-const TAG_LISTS: [string, TagList<string>][] = [
-  ["Industry", INDUSTRY],
-  ["Status", PROJECT_STATUS],
-  ["Product type", PRODUCT_TYPE],
-  ["Services", SERVICE],
-  ["AI features", AI_FEATURE],
-  ["Flows", FLOW],
-];
-
-export function TagListsSection() {
+export function TagListsSection({ catalog }: { catalog: TagCatalog }) {
   return (
     <DetailSection title="Tag lists">
       <p className="text-sm text-soft-foreground">
-        The controlled values every project uses. Adding values here from the screen comes in a later update; for now
-        they change in code (src/lib/constants.ts).
+        The controlled values every project uses. Add a value when a real project needs it; it appears in the form,
+        filters and search straight away. Values can&apos;t be renamed or removed here, because projects already use
+        them. Status and roles are fixed.
       </p>
-      <dl className="flex flex-col gap-4">
-        {TAG_LISTS.map(([name, list]) => (
-          <div key={name} className="grid gap-2 sm:grid-cols-[10rem_1fr]">
-            <dt className="text-sm text-muted-foreground">{name}</dt>
-            <dd className="flex flex-wrap gap-1">
-              {list.keys.map((key) => (
-                <Badge key={key} variant="outline">
-                  {list.labels[key]}
-                </Badge>
-              ))}
-            </dd>
-          </div>
-        ))}
+      <dl className="flex flex-col">
+        {TAG_LIST_NAMES.map((name) => {
+          const list = catalog[name];
+          return (
+            <div key={name} className="grid gap-3 border-t py-5 sm:grid-cols-[10rem_1fr]">
+              <dt className="text-sm text-muted-foreground">{TAG_LIST_TITLES[name]}</dt>
+              <dd className="flex flex-col gap-3">
+                <ul className="flex flex-wrap gap-1">
+                  {list.keys.map((key) => (
+                    <li key={key}>
+                      <Badge variant={list.added.includes(key) ? "default" : "outline"}>
+                        {tagLabel(list, key)}
+                        {list.added.includes(key) && <span className="sr-only"> (added)</span>}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+                <AddTagForm list={name} title={TAG_LIST_TITLES[name]} />
+              </dd>
+            </div>
+          );
+        })}
       </dl>
+      <p className="text-xs text-muted-foreground">Solid badges are values added here; outlined ones are built in.</p>
     </DetailSection>
   );
 }
