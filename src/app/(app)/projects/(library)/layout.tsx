@@ -7,7 +7,7 @@ import { getSessionUser } from "@/server/auth";
 /** Shared header and tabs for the library: all projects, visuals, drafts and review. */
 export default function LibraryLayout({ children }: LayoutProps<"/projects">) {
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       <PageHeader eyebrow="Projects" title="Everything we've built." />
       <Suspense fallback={<LibraryTabs tabs={libraryTabsFor("viewer")} />}>
         <RoleTabs />

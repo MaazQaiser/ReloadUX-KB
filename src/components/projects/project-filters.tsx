@@ -2,33 +2,43 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition, type FormEvent } from "react";
-import { SlidersHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState, useTransition, type ChangeEvent, type FormEvent } from "react";
+import { Plus, SlidersHorizontal } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { tagOptions, type TagCatalog } from "@/lib/tag-catalog";
-import type { ProjectFilters } from "@/schemas/project-filters";
+import { projectSearchHref, type ProjectFilters } from "@/schemas/project-filters";
 import type { GridFilterOptions } from "@/server/services/projects";
+
+/** Long enough to finish a word, short enough to feel live. */
+const SEARCH_DELAY_MS = 400;
+
+// Filters in the side panel; the row keeps only search, industry and type.
+const MORE: (keyof ProjectFilters)[] = ["ai_feature", "flow", "designer", "year", "sort"];
 
 interface SelectFieldProps {
   name: keyof ProjectFilters;
   label: string;
   value: string | undefined;
   options: { value: string; label: string }[];
+  onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
   /** What the empty choice means: "Any" for filters, the default order for sort. */
   emptyLabel?: string;
+  /** In the row the label is visually hidden, so the empty choice must say what it filters ("All industries"). */
+  compact?: boolean;
 }
 
-function SelectField({ name, label, value, options, emptyLabel = "Any" }: SelectFieldProps) {
+function SelectField({ name, label, value, options, onChange, emptyLabel = "Any", compact = false }: SelectFieldProps) {
   const id = `filter-${name}`;
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <Label htmlFor={id} className="text-xs text-muted-foreground">
+      <Label htmlFor={id} className={compact ? "sr-only" : "text-xs text-muted-foreground"}>
         {label}
       </Label>
-      <NativeSelect id={id} name={name} defaultValue={value ?? ""} className="w-full">
+      <NativeSelect id={id} name={name} defaultValue={value ?? ""} onChange={onChange} className="w-full">
         <NativeSelectOption value="">{emptyLabel}</NativeSelectOption>
         {options.map((option) => (
           <NativeSelectOption key={option.value} value={option.value}>
@@ -40,116 +50,173 @@ function SelectField({ name, label, value, options, emptyLabel = "Any" }: Select
   );
 }
 
-// Filters tucked behind "More filters"; it opens by itself when one of them is set.
-const MORE: (keyof ProjectFilters)[] = ["ai_feature", "flow", "designer", "year", "sort"];
-
 /**
- * One compact row: search, industry and type, with the rest behind "More
- * filters". Filters live in the URL, so results can be bookmarked; dropdowns
- * apply on change, search on Enter. Without JavaScript it is a plain GET form.
+ * One clean row: search, industry, type, "More filters" and Add project.
+ * Everything applies as soon as it changes (search after a short pause) and
+ * lives in the URL, so results can be bookmarked. Without JavaScript the row
+ * is a plain GET form that submits on Enter.
  */
-export function ProjectFiltersForm({
+export function ProjectFiltersBar({
   filters,
   options,
   catalog,
+  canAdd,
 }: {
   filters: ProjectFilters;
   options: GridFilterOptions;
   catalog: TagCatalog;
+  canAdd: boolean;
 }) {
   const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [moreOpen, setMoreOpen] = useState(false);
   const moreCount = MORE.filter((key) => filters[key] !== undefined).length;
-  const [showMore, setShowMore] = useState(moreCount > 0);
   const active = Object.values(filters).some((value) => value !== undefined);
+  // Remounts the dropdowns after each navigation so they show what the URL says.
+  const fieldsKey = JSON.stringify(filters);
+  // Search is controlled instead, so a live search can't remount it mid-word;
+  // it follows the URL (Clear all, back button) only while you aren't typing in it.
+  const [query, setQuery] = useState(filters.q ?? "");
+  const [syncedQuery, setSyncedQuery] = useState(filters.q);
+  const [typing, setTyping] = useState(false);
+  if (filters.q !== syncedQuery) {
+    setSyncedQuery(filters.q);
+    if (!typing) setQuery(filters.q ?? "");
+  }
 
-  function apply(form: HTMLFormElement) {
-    const params = new URLSearchParams();
-    for (const [key, value] of new FormData(form)) {
-      if (typeof value === "string" && value.trim() !== "") params.set(key, value.trim());
-    }
+  useEffect(() => () => clearTimeout(searchTimer.current), []);
+
+  function apply(name: keyof ProjectFilters, raw: string) {
+    clearTimeout(searchTimer.current);
+    const value = raw.trim();
+    const params = new URLSearchParams(projectSearchHref(filters).split("?")[1]);
+    if (value) params.set(name, value);
+    else params.delete(name);
     const query = params.toString();
-    startTransition(() => router.push(query ? `/projects?${query}` : "/projects"));
+    startTransition(() => router.push(query ? `/projects?${query}` : "/projects", { scroll: false }));
+  }
+
+  function onSelect(event: ChangeEvent<HTMLSelectElement>) {
+    apply(event.target.name as keyof ProjectFilters, event.target.value);
+  }
+
+  function onSearch(event: ChangeEvent<HTMLInputElement>) {
+    const value = event.target.value;
+    setQuery(value);
+    clearTimeout(searchTimer.current);
+    if (value.trim() === (filters.q ?? "")) return;
+    searchTimer.current = setTimeout(() => apply("q", value), SEARCH_DELAY_MS);
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    apply(event.currentTarget);
+    apply("q", query);
   }
 
   return (
     <form
-      ref={formRef}
       action="/projects"
       method="get"
       role="search"
       aria-label="Filter projects"
       aria-busy={pending}
       onSubmit={onSubmit}
-      onChange={(event) => {
-        if (event.target instanceof HTMLSelectElement && formRef.current) apply(formRef.current);
-      }}
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-3 lg:flex-row lg:items-end"
     >
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_12rem_auto] lg:items-end">
-        <div className="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-1">
-          <Label htmlFor="filter-q" className="text-xs text-muted-foreground">
+      <div className="grid flex-1 grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1fr)_11rem_11rem]">
+        <div className="col-span-2 flex flex-col gap-1.5 lg:col-span-1">
+          <Label htmlFor="filter-q" className="sr-only">
             Search
           </Label>
-          <Input id="filter-q" name="q" type="search" defaultValue={filters.q} placeholder="Project or client name" maxLength={100} />
+          <Input
+            id="filter-q"
+            name="q"
+            type="search"
+            value={query}
+            onChange={onSearch}
+            onFocus={() => setTyping(true)}
+            onBlur={() => setTyping(false)}
+            placeholder="Search projects or clients"
+            maxLength={100}
+          />
         </div>
-        <SelectField name="industry" label="Industry" value={filters.industry} options={tagOptions(catalog.industry)} />
-        <SelectField name="product_type" label="Type" value={filters.product_type} options={tagOptions(catalog.product_types)} />
-        <Button
-          type="button"
-          variant="outline"
-          aria-expanded={showMore}
-          aria-controls="more-filters"
-          onClick={() => setShowMore((open) => !open)}
-          className="sm:col-span-2 lg:col-span-1"
-        >
-          <SlidersHorizontal aria-hidden />
-          More filters{moreCount > 0 && ` (${moreCount})`}
-        </Button>
+        <SelectField key={`industry-${fieldsKey}`} compact name="industry" label="Industry" emptyLabel="All industries" value={filters.industry} options={tagOptions(catalog.industry)} onChange={onSelect} />
+        <SelectField key={`type-${fieldsKey}`} compact name="product_type" label="Type" emptyLabel="All types" value={filters.product_type} options={tagOptions(catalog.product_types)} onChange={onSelect} />
       </div>
 
-      <div id="more-filters" hidden={!showMore} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <SelectField name="ai_feature" label="AI feature" value={filters.ai_feature} options={tagOptions(catalog.ai_features)} />
-        <SelectField name="flow" label="Flow" value={filters.flow} options={tagOptions(catalog.flows)} />
-        <SelectField
-          name="designer"
-          label="Designer"
-          value={filters.designer}
-          options={options.designers.map((person) => ({
-            value: person.id,
-            label: person.active ? person.name : `${person.name} (former)`,
-          }))}
-        />
-        <SelectField
-          name="year"
-          label="Delivered"
-          value={filters.year?.toString()}
-          options={options.years.map((year) => ({ value: String(year), label: String(year) }))}
-        />
-        <SelectField
-          name="sort"
-          label="Sort"
-          value={filters.sort === "least_complete" ? "least_complete" : undefined}
-          emptyLabel="Newest delivery"
-          options={[{ value: "least_complete", label: "Least complete first" }]}
-        />
+      <div className="flex gap-3">
+        <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+          <SheetTrigger asChild>
+            <Button type="button" variant="outline" className="flex-1 lg:flex-none">
+              <SlidersHorizontal aria-hidden />
+              More filters
+              {moreCount > 0 && (
+                <span className="grid size-5 place-items-center rounded-full bg-rx-purple text-xs text-white" aria-label={`${moreCount} set`}>
+                  {moreCount}
+                </span>
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>More filters</SheetTitle>
+              <SheetDescription>Results update as you choose.</SheetDescription>
+            </SheetHeader>
+            <div key={fieldsKey} className="flex flex-col gap-5 overflow-y-auto p-6">
+              <SelectField name="ai_feature" label="AI feature" value={filters.ai_feature} options={tagOptions(catalog.ai_features)} onChange={onSelect} />
+              <SelectField name="flow" label="Flow" value={filters.flow} options={tagOptions(catalog.flows)} onChange={onSelect} />
+              <SelectField
+                name="designer"
+                label="Designer"
+                value={filters.designer}
+                options={options.designers.map((person) => ({
+                  value: person.id,
+                  label: person.active ? person.name : `${person.name} (former)`,
+                }))}
+                onChange={onSelect}
+              />
+              <SelectField
+                name="year"
+                label="Delivered"
+                value={filters.year?.toString()}
+                options={options.years.map((year) => ({ value: String(year), label: String(year) }))}
+                onChange={onSelect}
+              />
+              <SelectField
+                name="sort"
+                label="Sort"
+                value={filters.sort === "least_complete" ? "least_complete" : undefined}
+                emptyLabel="Newest delivery"
+                options={[{ value: "least_complete", label: "Least complete first" }]}
+                onChange={onSelect}
+              />
+            </div>
+            <SheetFooter>
+              <SheetClose asChild>
+                <Button type="button">Show results</Button>
+              </SheetClose>
+              {active && (
+                <Link href="/projects" onClick={() => setMoreOpen(false)} className="text-sm text-soft-foreground underline-offset-4 hover:underline">
+                  Clear all
+                </Link>
+              )}
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+
+        {canAdd && (
+          <Link href="/projects/new" className={buttonVariants({ className: "flex-1 lg:flex-none" })}>
+            <Plus aria-hidden />
+            Add project
+          </Link>
+        )}
       </div>
 
       {/* Enter in the search box submits; without JavaScript this is the way to apply. */}
       <button type="submit" className="sr-only">
-        Apply filters
+        Apply search
       </button>
-      {active && (
-        <Link href="/projects" className="self-start text-sm text-soft-foreground underline-offset-4 hover:underline">
-          Clear all filters
-        </Link>
-      )}
     </form>
   );
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Pagination } from "@/components/projects/pagination";
 import { ProjectCard } from "@/components/projects/project-card";
-import { ProjectFiltersForm } from "@/components/projects/project-filters";
+import { ProjectFiltersBar } from "@/components/projects/project-filters";
 import { ProjectsSkeleton } from "@/components/projects/projects-skeleton";
 import { buttonVariants } from "@/components/ui/button";
 import { hasRole } from "@/lib/auth-rules";
@@ -35,8 +35,7 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
 
   return (
     <>
-      {/* Keyed on the filters so the inputs reset to the URL after each navigation. */}
-      <ProjectFiltersForm key={JSON.stringify(filters)} filters={filters} options={options} catalog={catalog} />
+      <ProjectFiltersBar filters={filters} options={options} catalog={catalog} canAdd={hasRole(user.role, "editor")} />
 
       {ignored.length > 0 && (
         <p role="status" className="text-sm text-muted-foreground">
@@ -44,14 +43,14 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
         </p>
       )}
 
-      <div className="flex items-end justify-between gap-4 border-b pb-4">
+      <div className="flex items-baseline justify-between gap-4 border-b pb-4">
         <p role="status" className="text-xs tracking-[0.08em] text-muted-foreground uppercase">
           {page.total === 1 ? "1 project" : `${page.total} projects`}
           {hasFilters && " match these filters"}
         </p>
-        {hasRole(user.role, "editor") && (
-          <Link href="/projects/new" className={buttonVariants()}>
-            Add project
+        {hasFilters && (
+          <Link href="/projects" className="text-sm text-soft-foreground underline-offset-4 hover:underline">
+            Clear all
           </Link>
         )}
       </div>
