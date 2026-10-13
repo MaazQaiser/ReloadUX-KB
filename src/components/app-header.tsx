@@ -20,9 +20,15 @@ export function AppHeader() {
       >
         Skip to content
       </a>
-      <div className="mx-auto flex h-20 w-full max-w-7xl items-center gap-10 px-4 sm:px-8">
-        <Wordmark />
-        <nav aria-label="Main" className="flex items-center gap-6 overflow-x-auto">
+      {/* Phones: wordmark and account on top, links on their own row below so none get cut off. */}
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-10 px-4 sm:px-8 md:h-20 md:flex-nowrap">
+        <div className="flex h-16 items-center md:h-auto">
+          <Wordmark />
+        </div>
+        <nav
+          aria-label="Main"
+          className="order-last -mx-4 flex h-12 w-[calc(100%+2rem)] items-center gap-6 overflow-x-auto border-t px-4 sm:-mx-8 sm:w-[calc(100%+4rem)] sm:px-8 md:order-none md:mx-0 md:h-auto md:w-auto md:border-t-0 md:px-0"
+        >
           <Suspense fallback={<StaticNavLinks items={BASE_NAV_ITEMS} />}>
             <RoleNav />
           </Suspense>
