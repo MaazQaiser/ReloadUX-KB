@@ -10,6 +10,8 @@ import { slugSchema } from "@/schemas/common";
 import { requireRole } from "@/server/auth";
 import { listPeopleForForm } from "@/server/services/people";
 import { getProjectForEdit } from "@/server/services/projects";
+import { getProjectGallery } from "@/server/services/visuals";
+import { VisualsManager } from "@/components/visuals/visuals-manager";
 
 export const metadata: Metadata = { title: "edit project" };
 
@@ -30,6 +32,7 @@ async function EditProjectForm({ params }: { params: Promise<{ slug: string }> }
 
   const [project, people] = await Promise.all([getProjectForEdit(slug.data), listPeopleForForm()]);
   if (!project) notFound();
+  const gallery = await getProjectGallery(project.id);
 
   return (
     <>
@@ -51,6 +54,7 @@ async function EditProjectForm({ params }: { params: Promise<{ slug: string }> }
         project={{ id: project.id, slug: project.slug }}
         people={people.map(({ id, name, roles, active }) => ({ id, name, roles, active }))}
       />
+      <VisualsManager slug={project.slug} visuals={gallery} />
     </>
   );
 }

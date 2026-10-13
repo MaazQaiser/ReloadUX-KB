@@ -10,6 +10,7 @@ import { hasRole } from "@/lib/auth-rules";
 import { slugSchema } from "@/schemas/common";
 import { requireRole } from "@/server/auth";
 import { getProjectDetail } from "@/server/services/projects";
+import { getProjectGallery } from "@/server/services/visuals";
 
 export const metadata: Metadata = { title: "project" };
 
@@ -33,6 +34,7 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
 
   const detail = await getProjectDetail(slug.data);
   if (!detail) notFound();
+  const gallery = await getProjectGallery(detail.project.id);
 
   return (
     <div className="flex flex-col gap-12">
@@ -45,7 +47,7 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
         )}
       </div>
       <div className="grid gap-16 lg:grid-cols-[1fr_22rem]">
-        <ProjectMain project={detail.project} />
+        <ProjectMain project={detail.project} gallery={gallery} />
         <ProjectSidebar detail={detail} />
       </div>
     </div>

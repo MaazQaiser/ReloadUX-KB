@@ -60,7 +60,9 @@ export interface ProjectWriteOptions {
 function toProjectWrite(input: ProjectInput, { actor, reviewStatus, searchText }: ProjectWriteOptions) {
   const project = projectInputSchema.parse(input);
   const absent = Object.fromEntries(OPTIONAL_FIELDS.map((key) => [key, undefined]));
-  const { $set, $unset } = toUpdate({ ...absent, ...toStoredReferences(project) });
+  // Visuals are managed by the visuals service (upload, remove), never by saving the project form.
+  const stored = Object.fromEntries(Object.entries(toStoredReferences(project)).filter(([key]) => key !== "visuals"));
+  const { $set, $unset } = toUpdate({ ...absent, ...stored });
   return {
     slug: project.slug,
     $set: {
@@ -75,7 +77,7 @@ function toProjectWrite(input: ProjectInput, { actor, reviewStatus, searchText }
 }
 
 function withUnset({ $set, $unset }: { $set: Document; $unset: Record<string, ""> }) {
-  return { $set, ...(Object.keys($unset).length > 0 && { $unset }) };
+  return { $set, $setOnInsert: { visuals: [] }, ...(Object.keys($unset).length > 0 && { $unset }) };
 }
 
 /** Creates or updates the project with this slug, so seeds and imports can run twice. */
@@ -99,8 +101,9 @@ const DUPLICATE_KEY = 11000;
 export async function insertProject(input: ProjectInput, options: ProjectWriteOptions): Promise<Project | null> {
   const { $set } = toProjectWrite(input, options);
   try {
-    const { insertedId } = await (await projects()).insertOne($set);
-    return toProject({ _id: insertedId, ...$set });
+    const document = { ...$set, visuals: [] };
+    const { insertedId } = await (await projects()).insertOne(document);
+    return toProject({ _id: insertedId, ...document });
   } catch (error) {
     if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) return null;
     throw error;
@@ -215,4 +218,13 @@ export async function approveProjectById(id: string, actor: Actor): Promise<Proj
 export async function listAllVisibleProjects(): Promise<Project[]> {
   const documents = await (await projects()).find(VISIBLE).toArray();
   return documents.map(toProject);
+}
+
+/** Keeps the project's visuals list in step with the visuals collection. */
+export async function setProjectVisualMembership(projectId: string, visualId: string, member: boolean): Promise<void> {
+  const collection = await projects();
+  const filter = { _id: toObjectId(projectId) };
+  const visual = toObjectId(visualId);
+  if (member) await collection.updateOne(filter, { $addToSet: { visuals: visual } });
+  else await collection.updateOne(filter, { $pull: { visuals: visual } as Document });
 }

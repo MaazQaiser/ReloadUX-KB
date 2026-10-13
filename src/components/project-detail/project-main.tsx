@@ -2,6 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import { TagBadges } from "@/components/tag-badges";
 import { AI_FEATURE, FLOW, INDUSTRY, PRODUCT_TYPE, PROJECT_STATUS, SERVICE } from "@/lib/constants";
 import type { Project } from "@/schemas/project";
+import { VisualGallery } from "@/components/visuals/visual-gallery";
+import type { VisualView } from "@/server/services/visuals";
 import { DetailSection, Field, FieldList, NotRecorded } from "./section";
 
 export function ProjectHeader({ project }: { project: Project }) {
@@ -30,7 +32,7 @@ const STORY_FIELDS = [
   ["testimonial", "Testimonial"],
 ] as const;
 
-export function ProjectMain({ project }: { project: Project }) {
+export function ProjectMain({ project, gallery }: { project: Project; gallery: VisualView[] }) {
   const story = STORY_FIELDS.filter(([field]) => project[field]);
 
   return (
@@ -86,11 +88,11 @@ export function ProjectMain({ project }: { project: Project }) {
       </DetailSection>
 
       <DetailSection title="Visuals">
-        <p className="text-sm text-muted-foreground">
-          {project.visuals.length > 0
-            ? `${project.visuals.length} screenshots recorded; the gallery arrives with uploads.`
-            : "No screenshots yet."}
-        </p>
+        {gallery.length > 0 ? (
+          <VisualGallery visuals={gallery} projectName={project.name} />
+        ) : (
+          <p className="text-sm text-muted-foreground">No screenshots yet.</p>
+        )}
       </DetailSection>
     </div>
   );

@@ -194,7 +194,11 @@ export function ProjectForm(props: FormProps) {
       </Section>
 
       <Section title="Visuals">
-        <p className="text-sm text-muted-foreground">Screenshot uploads arrive in a later phase.</p>
+        <p className="text-sm text-muted-foreground">
+          {props.mode === "edit"
+            ? "Upload and arrange screenshots below the form; they save straight away."
+            : "Create the project first, then add screenshots from its edit page."}
+        </p>
       </Section>
 
       <div className="sticky bottom-0 flex items-center gap-4 border-t bg-background py-5">
