@@ -37,11 +37,12 @@ function firstName(name: string): string | undefined {
 
 function Greeting({ name }: { name?: string }) {
   return (
-    <div className="flex flex-col gap-6 border-b pb-10 sm:flex-row sm:items-end sm:justify-between">
-      <div className="flex max-w-3xl flex-col gap-4">
+    <div className="flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:pb-10">
+      <div className="flex max-w-3xl flex-col gap-3 sm:gap-4">
         <Eyebrow>Welcome</Eyebrow>
-        <h1 className="text-4xl leading-tight sm:text-6xl">{name ? `Hi ${name}, what have we built?` : "Hi, what have we built?"}</h1>
-        <p className="text-lg text-soft-foreground">
+        <h1 className="text-3xl leading-tight sm:text-6xl">{name ? `Hi ${name}, what have we built?` : "What have we built?"}</h1>
+        {/* Hidden on phones so the suggestions show above the floating ask bar without scrolling. */}
+        <p className="hidden text-lg text-soft-foreground sm:block">
           Ask about any past reloadux project in plain words, or start with a suggestion below. Answers begin with Yes,
           Partly or No and link to the projects they came from.
         </p>
