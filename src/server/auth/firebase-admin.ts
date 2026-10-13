@@ -3,15 +3,17 @@ import { cert, getApp, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import type { AuthConfig } from "@/env";
 
-const APP_NAME = "reloadux-kb";
-
 export function getAdminAuth({ admin }: AuthConfig): Auth {
-  if (admin.emulatorHost) {
-    // The Admin SDK reads this variable itself to talk to the emulator.
-    process.env.FIREBASE_AUTH_EMULATOR_HOST = admin.emulatorHost;
-  }
-  const app = getApps().some((existing) => existing.name === APP_NAME)
-    ? getApp(APP_NAME)
+  // The Admin SDK reads this variable itself. Clear it when not emulating, so a dev
+  // server that once ran against the emulator doesn't keep sending real sign-ins there.
+  if (admin.emulatorHost) process.env.FIREBASE_AUTH_EMULATOR_HOST = admin.emulatorHost;
+  else delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
+
+  // One app per project and mode: a config change (emulator → real project) gets a fresh
+  // app instead of reusing one initialised for the old project across hot reloads.
+  const name = `reloadux-kb:${admin.projectId}:${admin.emulatorHost ? "emulator" : "live"}`;
+  const app = getApps().some((existing) => existing.name === name)
+    ? getApp(name)
     : initializeApp(
         {
           projectId: admin.projectId,
@@ -20,7 +22,7 @@ export function getAdminAuth({ admin }: AuthConfig): Auth {
             credential: cert({ projectId: admin.projectId, clientEmail: admin.clientEmail!, privateKey: admin.privateKey! }),
           }),
         },
-        APP_NAME,
+        name,
       );
   return getAuth(app);
 }
