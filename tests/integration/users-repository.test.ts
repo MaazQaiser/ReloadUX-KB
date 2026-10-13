@@ -59,6 +59,28 @@ describe("upsertUserOnSignIn", () => {
     expect(await findUserByFirebaseUid("uid-sara-new-project")).toMatchObject({ id: first.id });
   });
 
+  it("signs in without a Google photo, as session.ts passes it (key present, value undefined)", async () => {
+    const user = await upsertUserOnSignIn({ ...sara, photo_url: undefined }, { promoteToAdmin: false });
+    expect(user.photo_url).toBeUndefined();
+
+    const again = await upsertUserOnSignIn({ ...sara, photo_url: undefined }, { promoteToAdmin: false });
+    expect(again.id).toBe(user.id);
+  });
+
+  it("stores a photo, and removes it when a later sign-in has none", async () => {
+    const photo = "https://lh3.googleusercontent.com/a/photo";
+    expect((await upsertUserOnSignIn({ ...sara, photo_url: photo }, { promoteToAdmin: false })).photo_url).toBe(photo);
+
+    const without = await upsertUserOnSignIn({ ...sara, photo_url: undefined }, { promoteToAdmin: false });
+    expect(without.photo_url).toBeUndefined();
+    expect(await (await collection()).countDocuments({ photo_url: { $exists: true } })).toBe(0);
+  });
+
+  it("drops a photo URL that isn't https instead of failing the sign-in", async () => {
+    const user = await upsertUserOnSignIn({ ...sara, photo_url: "http://example.com/a.png" }, { promoteToAdmin: false });
+    expect(user.photo_url).toBeUndefined();
+  });
+
   it("never demotes an admin", async () => {
     await upsertUserOnSignIn(sara, { promoteToAdmin: true });
     expect((await upsertUserOnSignIn(sara, { promoteToAdmin: false })).role).toBe("admin");

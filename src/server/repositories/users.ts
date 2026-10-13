@@ -30,7 +30,9 @@ export async function upsertUserOnSignIn(
   input: z.input<typeof signInSchema>,
   { promoteToAdmin }: { promoteToAdmin: boolean },
 ): Promise<User> {
-  const identity = signInSchema.parse(input);
+  // photo_url is split out: a missing photo must only be $unset, never also $set (as null),
+  // or Mongo rejects the update for touching the same path twice.
+  const { photo_url, ...identity } = signInSchema.parse(input);
   const now = new Date();
 
   // Match on the verified email: the Firebase uid changes if the Firebase project does,
@@ -38,9 +40,10 @@ export async function upsertUserOnSignIn(
   const saved = await (await users()).findOneAndUpdate(
     { email: identity.email },
     {
-      ...(!identity.photo_url && { $unset: { photo_url: "" } }),
+      ...(!photo_url && { $unset: { photo_url: "" } }),
       $set: {
         ...identity,
+        ...(photo_url && { photo_url }),
         last_sign_in_at: now,
         updated_by: SIGN_IN_ACTOR,
         updated_at: now,
