@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { approveDraftAction, type ApproveState } from "@/app/(app)/review/actions";
+import { approveDraftAction, type ApproveState } from "@/app/(app)/projects/review-actions";
 import { Button } from "@/components/ui/button";
 
 export function ApproveDraftForm({ projectId, name }: { projectId: string; name: string }) {

@@ -17,7 +17,7 @@ export async function approveDraftAction(_previous: ApproveState, formData: Form
 
   const result = await approveDraft(admin, id.data);
   if (!result.ok) return { ok: false, message: "This draft was already approved or removed." };
-  revalidatePath("/review");
+  revalidatePath("/projects/drafts");
   revalidatePath("/projects");
   return { ok: true, message: `${result.value.name} is now live.` };
 }
@@ -38,7 +38,7 @@ export async function resolveGapAction(_previous: ApproveState, formData: FormDa
   if (!input.success) return { ok: false, message: "Pick how it was resolved." };
   const result = await closeGap(admin, input.data.gapId, input.data.type, input.data.note);
   if (!result.ok) return { ok: false, message: "Someone already resolved this one." };
-  revalidatePath("/review");
+  revalidatePath("/projects/review");
   return { ok: true, message: "Resolved." };
 }
 
@@ -72,7 +72,7 @@ export async function saveVerifiedAnswerAction(_previous: VerifiedAnswerState, f
       message: result.error.kind === "not_found" ? "That answer was removed." : "A linked project no longer exists. Pick again.",
     };
   }
-  revalidatePath("/review");
+  revalidatePath("/projects/review");
   return { ok: true, message: parsedId ? "Saved." : "Added. The agent will start from it for similar questions." };
 }
 
@@ -81,6 +81,6 @@ export async function deleteVerifiedAnswerAction(_previous: ApproveState, formDa
   const id = idSchema.safeParse(formData.get("id"));
   if (!id.success) return { ok: false, message: "That answer couldn't be read." };
   const removed = await removeVerifiedAnswer(admin, id.data);
-  revalidatePath("/review");
+  revalidatePath("/projects/review");
   return removed ? { ok: true, message: "Removed." } : { ok: false, message: "It was already removed." };
 }

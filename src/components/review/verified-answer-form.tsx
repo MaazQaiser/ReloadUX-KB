@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { saveVerifiedAnswerAction, type VerifiedAnswerState } from "@/app/(app)/review/actions";
+import { saveVerifiedAnswerAction, type VerifiedAnswerState } from "@/app/(app)/projects/review-actions";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";

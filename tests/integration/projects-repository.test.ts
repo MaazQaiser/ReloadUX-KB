@@ -219,18 +219,7 @@ describe("findProjectBySlug with drafts", () => {
   });
 });
 
-describe("drafts and soft delete", () => {
-  const DRAFT = { ...SEED, reviewStatus: "draft" } as const;
-
-  it("lists drafts only when asked, and never alongside approved projects", async () => {
-    await upsertProjectBySlug(elia, SEED);
-    await upsertProjectBySlug(fintua, DRAFT);
-
-    expect(await slugs({})).toEqual(["elia-wellness"]);
-    expect(await slugs({ review: "approved" })).toEqual(["elia-wellness"]);
-    expect(await slugs({ review: "draft" })).toEqual(["fintua-onboarding"]);
-  });
-
+describe("soft delete and unpaged listing", () => {
   it("hides a soft-deleted project everywhere but keeps the record", async () => {
     const saved = await upsertProjectBySlug(elia, SEED);
     await upsertProjectBySlug(ledger, SEED);

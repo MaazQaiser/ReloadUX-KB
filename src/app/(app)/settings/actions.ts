@@ -25,7 +25,7 @@ export async function changeRoleAction(_previous: RoleFormState, formData: FormD
       message: result.error === "own_role" ? "You can't change your own role." : "That person no longer exists.",
     };
   }
-  revalidatePath("/settings");
+  revalidatePath("/users");
   return { ok: true, message: `Saved: ${result.value.name} is now ${USER_ROLE.labels[result.value.role]}.` };
 }
 

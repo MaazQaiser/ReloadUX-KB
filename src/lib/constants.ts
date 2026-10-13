@@ -107,8 +107,8 @@ export const USER_ROLE = tagList({
 /** "__session" is the one cookie name Firebase Hosting forwards, so keep it if hosting changes. */
 export const SESSION_COOKIE_NAME = "__session";
 
-/** Slugs that would collide with routes under /projects. */
-export const RESERVED_PROJECT_SLUGS: readonly string[] = ["new"];
+/** Slugs that would collide with routes under /projects (the form and the library tabs). */
+export const RESERVED_PROJECT_SLUGS: readonly string[] = ["new", "visuals", "drafts", "review"];
 
 /** How an answer opens (SPEC.md answer rule 1): "partly" means similar but not exact. */
 export const ANSWER_VERDICT = tagList({

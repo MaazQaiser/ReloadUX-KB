@@ -9,7 +9,7 @@ test.describe("ask", () => {
 
     await expect(page.getByRole("heading", { level: 1, name: "What have we built?" })).toBeVisible();
     await expect(page.getByText("Preview data")).toBeVisible();
-    await expect(page.getByRole("link", { name: "ask", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("link", { name: "home", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("button", { name: "Have we done a healthcare chatbot?" })).toBeVisible();
   });
 

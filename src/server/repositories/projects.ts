@@ -137,7 +137,7 @@ export async function findProjectBySlug(
 }
 
 function toQuery(filters: ProjectFilters): Filter<Document> {
-  const conditions: Filter<Document>[] = [filters.review === "draft" ? LIVE_DRAFT : VISIBLE];
+  const conditions: Filter<Document>[] = [VISIBLE];
 
   if (filters.q) {
     const pattern = { $regex: escapeRegExp(filters.q), $options: "i" };

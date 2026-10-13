@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { deleteVerifiedAnswerAction, type ApproveState } from "@/app/(app)/review/actions";
+import { deleteVerifiedAnswerAction, type ApproveState } from "@/app/(app)/projects/review-actions";
 import { Button } from "@/components/ui/button";
 import { VerifiedAnswerForm } from "./verified-answer-form";
 

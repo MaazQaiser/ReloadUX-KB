@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { resolveGapAction, type ApproveState } from "@/app/(app)/review/actions";
+import { resolveGapAction, type ApproveState } from "@/app/(app)/projects/review-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

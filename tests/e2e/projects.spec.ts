@@ -15,11 +15,10 @@ test.describe("projects grid", () => {
     await expect(page.getByRole("link", { name: "projects", exact: true })).toHaveAttribute("aria-current", "page");
   });
 
-  test("filters through the form and keeps them in the URL", async ({ page }) => {
+  test("applies a filter as soon as it is picked and keeps it in the URL", async ({ page }) => {
     await page.goto("/projects");
 
     await page.getByLabel("Industry").selectOption("fintech");
-    await page.getByRole("button", { name: "Apply filters" }).click();
 
     await expect(page).toHaveURL(/industry=fintech/);
     await expect(page.getByText("1 project match these filters")).toBeVisible();

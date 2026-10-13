@@ -6,7 +6,6 @@ import {
   IntegrationsSection,
   LibraryHealthSection,
   TagListsSection,
-  UsersSection,
 } from "@/components/settings/settings-sections";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getIntegrations } from "@/env";
@@ -14,7 +13,6 @@ import { requireRole } from "@/server/auth";
 import { getLibraryHealth } from "@/server/services/analytics";
 import { getAskAnalytics } from "@/server/services/learning";
 import { getTagCatalog } from "@/server/services/tags";
-import { listUsersForSettings } from "@/server/services/users";
 
 export const metadata: Metadata = { title: "settings" };
 
@@ -24,7 +22,7 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Admin"
         title="Settings and analytics"
-        description="Who can get in and what they can do, which services are connected, and how complete the library is."
+        description="Which services are connected, how complete the library is, the tag lists and the agent's scores. People and access are under Users."
       />
       <Suspense fallback={<Skeleton className="h-96" />}>
         <SettingsView />
@@ -34,16 +32,14 @@ export default function SettingsPage() {
 }
 
 async function SettingsView() {
-  const admin = await requireRole("admin");
-  const [users, health, ask, catalog] = await Promise.all([
-    listUsersForSettings(),
+  await requireRole("admin");
+  const [health, ask, catalog] = await Promise.all([
     getLibraryHealth(),
     getAskAnalytics(),
     getTagCatalog(),
   ]);
   return (
     <div className="flex flex-col gap-12">
-      <UsersSection users={users} currentUserId={admin.id} />
       <IntegrationsSection integrations={getIntegrations()} />
       <LibraryHealthSection health={health} ask={ask} />
       <TagListsSection catalog={catalog} />
