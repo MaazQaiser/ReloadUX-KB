@@ -43,7 +43,7 @@ All three inputs pass through the same ingest step, and unanswered questions loo
 | App (front and back end) | Next.js App Router, TypeScript, Tailwind, shadcn/ui | One codebase, well supported by Claude Code |
 | Hosting | Vercel | Simple deploys, built-in cron |
 | Long jobs | Inngest or Trigger.dev | Migration and bulk imports can outlast serverless time limits |
-| Login | Firebase Authentication with Google, company domain only; server-verified session cookie, roles stored in MongoDB | Internal-only access with roles; Auth Emulator for end-to-end tests |
+| Login | Firebase Authentication with Google; server-verified session cookie, roles stored in MongoDB | Internal-only access with roles; Auth Emulator for end-to-end tests |
 | Database | MongoDB Atlas with Vector Search and Atlas Search | Records, vectors, keyword search and logs in one place |
 | Files | Cloudflare R2 | Cheap image storage, no egress fees |
 | LLM | Claude via Anthropic API | Tool use for the agent, vision for captions |
@@ -179,7 +179,7 @@ The app has nine screens, styled in the reloadux look (lowercase wordmark, clean
 
 | Screen | Who | What it does |
 | --- | --- | --- |
-| Login | All | Google sign-in, company domain only |
+| Login | All | Google sign-in |
 | Ask (home) | All | Chat with starter questions; answers show a Yes / Partly / No verdict, project cards, thumbnails, links, thumbs up / down |
 | Projects | All | Searchable, filterable grid by industry, type, AI feature, flow, designer, year |
 | Project detail | All | Full record, visuals gallery with Figma links, timeline, people, links, completeness score |
@@ -223,7 +223,9 @@ Decisions made after the original spec, approved by the project owner.
 | --- | --- |
 | 2026-10-09 | Auth uses Firebase Authentication (Google provider) instead of Auth.js; the server verifies tokens with `firebase-admin` and issues session cookies. Roles live in the MongoDB `users` collection. |
 | 2026-10-09 | Sign-in is restricted to `reloadux.com` email addresses (verified email, checked on the server). |
-| 2026-10-09 | New users get the `viewer` role. Initial admins come from the `INITIAL_ADMIN_EMAILS` environment variable. |
+| 2026-10-12 | Domain restriction removed. Any verified Google account can sign in. |
+| 2026-10-13 | New accounts start with the `pending` role and see nothing until an admin approves them in Settings. Admins can't change their own role. |
+| 2026-10-09 | New users get the `viewer` role (superseded 2026-10-13: they start as `pending`). Initial admins come from the `INITIAL_ADMIN_EMAILS` environment variable. |
 | 2026-10-09 | Tag lists live in `src/lib/constants.ts` until phase 6, when they move to a database collection seeded from those constants so admins can add values in Settings. |
 | 2026-10-09 | Tag values are stored as stable keys (for example `mobile_app_ios`) with display labels kept alongside the key lists. |
 | 2026-10-09 | **people** fields: name, slug, email (optional), roles (designer, account_manager), active. |

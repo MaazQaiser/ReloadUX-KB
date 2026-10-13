@@ -10,7 +10,7 @@ export const VIEWER = { email: "viewer@reloadux.com", state: "playwright/.auth/v
 export async function signInThroughPopup(page: Page, email: string) {
   await page.goto("/login");
   const popupPromise = page.waitForEvent("popup");
-  await page.getByRole("button", { name: "Sign in with Google" }).click();
+  await page.getByRole("button", { name: "Continue with Google" }).click();
   const popup = await popupPromise;
   // The popup reports back through Firebase's hidden iframe on this page. A script that
   // signs in faster than that iframe loads loses the result, so wait for it first.

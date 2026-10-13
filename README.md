@@ -21,7 +21,7 @@ MONGODB_URI=mongodb://127.0.0.1:27018
 MONGODB_DB=reloadux_dev
 ```
 
-Every page needs Google sign-in with a reloadux.com account. Until the Firebase settings in `.env.example` are filled in, the app shows "Sign-in isn't set up yet" and stays locked.
+Every page needs Google sign-in, and new accounts wait for an admin to approve them in Settings (people listed in `INITIAL_ADMIN_EMAILS` are admins straight away). Until the Firebase settings in `.env.example` are filled in, the app shows "Sign-in isn't set up yet" and stays locked.
 
 ## Commands
 

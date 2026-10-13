@@ -19,10 +19,10 @@ beforeEach(async () => {
 });
 
 describe("upsertUserOnSignIn", () => {
-  it("creates a viewer on first sign-in with a lowercased email", async () => {
+  it("creates a pending user on first sign-in with a lowercased email", async () => {
     const user = await upsertUserOnSignIn(sara, { promoteToAdmin: false });
 
-    expect(user).toMatchObject({ firebase_uid: "uid-sara", email: "sara@reloadux.com", role: "viewer" });
+    expect(user).toMatchObject({ firebase_uid: "uid-sara", email: "sara@reloadux.com", role: "pending" });
     expect(user.created_at).toEqual(user.last_sign_in_at);
   });
 

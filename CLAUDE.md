@@ -5,7 +5,7 @@ Internal web app where the reloadux team asks about past projects ("have we done
 ## Stack
 
 - Next.js (App Router) + TypeScript (strict) + Tailwind + shadcn/ui, hosted on Vercel
-- Firebase Authentication (Google provider) on the client, `firebase-admin` on the server to verify tokens and issue session cookies; restricted to the company domain; roles (viewer, editor, admin) stored in the MongoDB `users` collection, not in Firebase
+- Firebase Authentication (Google provider) on the client, `firebase-admin` on the server to verify tokens and issue session cookies; any verified Google account; roles (viewer, editor, admin) stored in the MongoDB `users` collection, not in Firebase
 - MongoDB Atlas (official `mongodb` driver) with Atlas Vector Search and Atlas Search
 - Cloudflare R2 for images (S3-compatible SDK)
 - Anthropic SDK (Claude) for the agent and image captions; Voyage AI for embeddings and reranking
@@ -97,7 +97,8 @@ tests/                  # integration and e2e tests
 
 ## Security
 
-- Google sign-in restricted to the company domain; deny by default. The domain and `email_verified` check happens on the server when creating the session cookie, never only in the client.
+- Google sign-in requires a verified email, checked on the server when creating the session cookie, never only in the client.
+- Any verified Google account can sign in, but new users get the `pending` role and no access until an admin approves them. `requireRole()` sends pending users to `/pending`; deny by default.
 - Session cookies are httpOnly, secure and SameSite; verify them with revocation checks in `requireRole()`.
 - The Firebase Admin private key is server-only; only the `NEXT_PUBLIC_FIREBASE_*` web config may reach the client.
 - Role checks on the server, not just hidden buttons in the UI.

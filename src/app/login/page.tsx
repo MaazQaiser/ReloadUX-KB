@@ -5,7 +5,6 @@ import { GoogleSignIn } from "@/components/auth/google-sign-in";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Wordmark } from "@/components/wordmark";
 import { getAuthConfig } from "@/env";
-import { ALLOWED_EMAIL_DOMAIN } from "@/lib/constants";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { getSessionUser } from "@/server/auth";
 
@@ -19,7 +18,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         <div className="flex flex-col gap-4">
           <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">Project intelligence</p>
           <h1 className="text-5xl leading-tight">Everything we&apos;ve built, one question away.</h1>
-          <p className="text-lg text-soft-foreground">Sign in with your {ALLOWED_EMAIL_DOMAIN} Google account.</p>
+          <p className="text-lg text-soft-foreground">Sign in with your Google account.</p>
         </div>
         <Suspense fallback={<Skeleton className="h-10 w-full" />}>
           <SignInPanel searchParams={searchParams} />

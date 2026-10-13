@@ -3,7 +3,6 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { getAuthConfig } from "@/env";
-import { isAllowedEmail } from "@/lib/auth-rules";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 import { err, ok, type Result } from "@/lib/result";
 import type { User } from "@/schemas/user";
@@ -38,8 +37,8 @@ export async function createSession(
   }
 
   if (now() / 1000 - decoded.auth_time > MAX_SIGN_IN_AGE_SECONDS) return err("stale_sign_in");
-  if (!decoded.email || decoded.email_verified !== true || !isAllowedEmail(decoded.email)) {
-    log.warn("sign-in refused: email not allowed", { firebaseUid: decoded.uid });
+  if (!decoded.email || decoded.email_verified !== true) {
+    log.warn("sign-in refused: email missing or unverified", { firebaseUid: decoded.uid });
     return err("email_not_allowed");
   }
 
@@ -55,7 +54,7 @@ export async function createSession(
 
 /**
  * The signed-in user for this request, or null. Checks the cookie with
- * Firebase (including revocation) and re-checks the domain every time.
+ * Firebase, including revocation.
  * Cached per request, so several components can ask without extra calls.
  */
 export const getSessionUser = cache(async (): Promise<User | null> => {
@@ -68,8 +67,7 @@ export const getSessionUser = cache(async (): Promise<User | null> => {
 
   try {
     const decoded = await getAdminAuth(config).verifySessionCookie(cookie, true);
-    const user = await findUserByFirebaseUid(decoded.uid);
-    return user && isAllowedEmail(user.email) ? user : null;
+    return await findUserByFirebaseUid(decoded.uid);
   } catch (error) {
     log.info("session cookie rejected", { error });
     return null;

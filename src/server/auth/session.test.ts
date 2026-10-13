@@ -68,7 +68,6 @@ describe("createSession", () => {
   });
 
   it.each([
-    ["another domain", { email: "sara@gmail.com" }],
     ["an unverified email", { email_verified: false }],
     ["no email", { email: undefined }],
   ])("refuses %s without creating a user or cookie", async (_case, overrides) => {
@@ -77,6 +76,16 @@ describe("createSession", () => {
     expect(await createSession("t", () => NOW)).toEqual({ ok: false, error: "email_not_allowed" });
     expect(usersRepository.upsertUserOnSignIn).not.toHaveBeenCalled();
     expect(adminAuth.createSessionCookie).not.toHaveBeenCalled();
+  });
+
+  it("accepts a Google account on any domain", async () => {
+    adminAuth.verifyIdToken.mockResolvedValue(token({ email: "Sara@gmail.com" }));
+
+    expect(await createSession("t", () => NOW)).toEqual({ ok: true, value: { cookie: "session-cookie", user } });
+    expect(usersRepository.upsertUserOnSignIn).toHaveBeenCalledWith(
+      { firebase_uid: "uid-sara", email: "sara@gmail.com", name: "Sara" },
+      { promoteToAdmin: false },
+    );
   });
 
   it("records the user and returns a five-day session cookie", async () => {
@@ -124,12 +133,13 @@ describe("getSessionUser", () => {
     expect(adminAuth.verifySessionCookie).toHaveBeenCalledWith("good", true);
   });
 
-  it("refuses a stored user whose email is no longer allowed", async () => {
+  it("returns a stored user on any domain", async () => {
     cookieStore.get.mockReturnValue({ value: "good" });
-    adminAuth.verifySessionCookie.mockResolvedValue(token());
-    vi.mocked(usersRepository.findUserByFirebaseUid).mockResolvedValue({ ...user, email: "sara@gmail.com" });
+    adminAuth.verifySessionCookie.mockResolvedValue(token({ email: "sara@gmail.com" }));
+    const gmailUser = { ...user, email: "sara@gmail.com" };
+    vi.mocked(usersRepository.findUserByFirebaseUid).mockResolvedValue(gmailUser);
 
-    expect(await getSessionUser()).toBeNull();
+    expect(await getSessionUser()).toEqual(gmailUser);
   });
 });
 

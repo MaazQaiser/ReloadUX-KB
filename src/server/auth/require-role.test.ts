@@ -22,6 +22,11 @@ describe("requireRole", () => {
     await expect(requireRole("viewer")).rejects.toThrow("redirect:/login");
   });
 
+  it("sends pending users to wait for approval, whatever the role asked for", async () => {
+    vi.mocked(session.getSessionUser).mockResolvedValue({ ...viewer, role: "pending" });
+    await expect(requireRole("viewer")).rejects.toThrow("redirect:/pending");
+  });
+
   it("sends users without the role to /forbidden", async () => {
     vi.mocked(session.getSessionUser).mockResolvedValue(viewer);
     await expect(requireRole("editor")).rejects.toThrow("redirect:/forbidden");

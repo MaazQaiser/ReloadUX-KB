@@ -16,5 +16,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Everything except sign-in itself, the auth endpoints, and static assets.
-  matcher: ["/((?!login|forbidden|api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!login|forbidden|pending|api/auth|_next/static|_next/image|favicon.ico).*)"],
 };

@@ -11,18 +11,9 @@ test.describe("signed out", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Ledgerly" })).toBeVisible();
   });
 
-  test("can't sign in with an account outside reloadux.com", async ({ page }) => {
+  test("can sign in with any Google account", async ({ page }) => {
     await signInThroughPopup(page, "someone@gmail.com");
-
-    await expect(page.getByRole("alert").filter({ hasText: "Use your" })).toHaveText("Use your reloadux.com Google account.");
-    await expect(page).toHaveURL(/\/login/);
-    await page.goto("/projects");
-    await expect(page).toHaveURL(/\/login/);
-  });
-
-  test("can't use a look-alike domain", async ({ page }) => {
-    await signInThroughPopup(page, "someone@reloadux.com.evil.io");
-    await expect(page.getByRole("alert").filter({ hasText: "Use your" })).toHaveText("Use your reloadux.com Google account.");
+    await expectSignedIn(page);
   });
 });
 

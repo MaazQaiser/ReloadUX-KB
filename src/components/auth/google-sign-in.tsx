@@ -14,7 +14,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ALLOWED_EMAIL_DOMAIN } from "@/lib/constants";
 
 export interface FirebaseWebConfig {
   apiKey: string;
@@ -24,7 +23,7 @@ export interface FirebaseWebConfig {
 }
 
 const MESSAGES: Record<string, string> = {
-  email_not_allowed: `Use your ${ALLOWED_EMAIL_DOMAIN} Google account.`,
+  email_not_allowed: "Google didn't share a verified email address.",
   stale_sign_in: "That took too long. Please sign in again.",
   invalid_token: "Google sign-in didn't go through. Please try again.",
   not_configured: "Sign-in isn't set up on this server yet.",
@@ -61,7 +60,8 @@ export function GoogleSignIn({ config, next }: { config: FirebaseWebConfig; next
       // The server's session cookie is the only session; nothing is kept in the browser.
       await setPersistence(auth, inMemoryPersistence);
       const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ hd: ALLOWED_EMAIL_DOMAIN, prompt: "select_account" });
+      // hd replaces the account chooser with a domain-locked email form.
+      provider.setCustomParameters({ prompt: "select_account" });
       const credential = await signInWithPopup(auth, provider);
 
       const response = await fetch("/api/auth/session", {
@@ -89,7 +89,7 @@ export function GoogleSignIn({ config, next }: { config: FirebaseWebConfig; next
   return (
     <div className="flex flex-col gap-3">
       <Button onClick={signIn} disabled={working} size="lg" className="w-full">
-        {working ? "Signing in…" : "Sign in with Google"}
+        {working ? "Continuing…" : "Continue with Google"}
       </Button>
       <p role="alert" aria-live="polite" className="min-h-5 text-sm text-destructive">
         {message}

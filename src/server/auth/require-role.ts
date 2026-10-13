@@ -13,6 +13,7 @@ import { getSessionUser } from "./session";
 export async function requireRole(role: UserRole): Promise<User> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
+  if (user.role === "pending") redirect("/pending");
   if (!hasRole(user.role, role)) redirect("/forbidden");
   return user;
 }

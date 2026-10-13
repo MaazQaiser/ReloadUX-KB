@@ -92,15 +92,17 @@ export const REVIEW_STATUS = tagList({
   approved: "approved",
 });
 
-/** Ordered from least to most access; see hasRole(). */
+/**
+ * Ordered from least to most access; see hasRole(). Anyone with a verified
+ * Google account can sign in, but starts as "pending" with no access until an
+ * admin approves them (SPEC.md decisions log, 2026-10-13).
+ */
 export const USER_ROLE = tagList({
+  pending: "pending approval",
   viewer: "viewer",
   editor: "editor",
   admin: "admin",
 });
-
-/** Only verified Google accounts on this exact domain may sign in (SPEC.md decisions log). */
-export const ALLOWED_EMAIL_DOMAIN = "reloadux.com";
 
 /** "__session" is the one cookie name Firebase Hosting forwards, so keep it if hosting changes. */
 export const SESSION_COOKIE_NAME = "__session";

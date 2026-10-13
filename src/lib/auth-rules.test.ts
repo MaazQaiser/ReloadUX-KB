@@ -1,24 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasRole, isAllowedEmail } from "./auth-rules";
-
-describe("isAllowedEmail", () => {
-  it.each(["sara@reloadux.com", "Sara.Malik@ReloadUX.com"])("allows %s", (email) => {
-    expect(isAllowedEmail(email)).toBe(true);
-  });
-
-  it.each([
-    "sara@gmail.com",
-    "sara@sub.reloadux.com",
-    "sara@reloadux.com.evil.io",
-    "sara@notreloadux.com",
-    "reloadux.com",
-    "@reloadux.com",
-    "a@b@reloadux.com",
-    "",
-  ])("refuses %j", (email) => {
-    expect(isAllowedEmail(email)).toBe(false);
-  });
-});
+import { hasRole } from "./auth-rules";
 
 describe("hasRole", () => {
   it("grants a role and everything below it", () => {
