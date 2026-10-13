@@ -4,10 +4,10 @@ import { VIEWER } from "./helpers";
 test.use({ storageState: VIEWER.state });
 
 test.describe("ask", () => {
-  test("home is the Ask screen with starter questions", async ({ page }) => {
+  test("home greets you and offers starter questions", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { level: 1, name: "What have we built?" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /what have we built\?/ })).toBeVisible();
     await expect(page.getByText("Preview data")).toBeVisible();
     await expect(page.getByRole("link", { name: "home", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("button", { name: "Have we done a healthcare chatbot?" })).toBeVisible();
