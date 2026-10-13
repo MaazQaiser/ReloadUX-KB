@@ -106,7 +106,7 @@ export function AskChat({ starters, name }: { starters: readonly string[]; name?
         <Label htmlFor="ask-question" className="sr-only">
           Ask about past projects
         </Label>
-        <div className="pointer-events-auto flex w-full max-w-3xl items-center gap-2 rounded-[1.8rem] border border-pill-border bg-pill px-3 py-2.5 shadow-[0_8px_32px_rgb(0_0_0/0.5)] focus-within:border-muted-foreground md:gap-3 md:px-4.5 md:py-3.5">
+        <div className="pointer-events-auto flex w-full max-w-3xl items-center gap-2 rx-glow-stroke rounded-[1.8rem] border border-pill-border bg-pill px-3 py-2.5 focus-within:border-muted-foreground md:gap-3 md:px-4.5 md:py-3.5">
           <span aria-hidden className="rx-gradient-ring size-8 shrink-0 p-0.5 md:size-9.5">
             <span className="grid size-full place-items-center rounded-full bg-[#d9d9d9] text-xs font-extrabold text-black">UX</span>
           </span>

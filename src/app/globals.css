@@ -270,3 +270,40 @@
     }
   }
 }
+
+/* The ask pill's stroke: lit at the top-left and bottom-right corners, fading along the
+   edges, with a soft purple light outside those corners. Brighter while typing. */
+@utility rx-glow-stroke {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    -10px -6px 28px -14px color-mix(in srgb, var(--rx-purple) 70%, transparent),
+    10px 6px 28px -14px color-mix(in srgb, var(--rx-lilac) 45%, transparent),
+    0 8px 32px rgb(0 0 0 / 0.5);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    padding: 1px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.75;
+    background:
+      radial-gradient(30% 140% at 0% 0%, var(--rx-lilac), transparent 70%),
+      radial-gradient(30% 140% at 100% 100%, var(--rx-purple), transparent 70%);
+    /* Keep only the 1px ring: the padding box minus the content box. */
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    transition: opacity 200ms;
+  }
+  &:focus-within::before {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      transition: none;
+    }
+  }
+}
