@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VisualImage } from "@/components/visuals/visual-image";
-import { FLOW } from "@/lib/constants";
+import { tagLabel, tagOptions } from "@/lib/tag-catalog";
 import { flowSchema } from "@/schemas/tags";
+import { getTagCatalog } from "@/server/services/tags";
 import { requireRole } from "@/server/auth";
 import { listFigmaFilesByProject, searchLibrary } from "@/server/services/visuals";
 
@@ -38,7 +39,7 @@ async function VisualsView({ searchParams }: { searchParams: PageProps<"/visuals
   const params = await searchParams;
   const q = first(params.q)?.trim().slice(0, 100) || undefined;
   const flow = flowSchema.safeParse(first(params.flow)).data;
-  const [results, figma] = await Promise.all([searchLibrary({ q, flow }), listFigmaFilesByProject()]);
+  const [results, figma, catalog] = await Promise.all([searchLibrary({ q, flow }), listFigmaFilesByProject(), getTagCatalog()]);
   const filtered = Boolean(q || flow);
 
   return (
@@ -52,9 +53,9 @@ async function VisualsView({ searchParams }: { searchParams: PageProps<"/visuals
           <Label htmlFor="visual-flow">Flow</Label>
           <NativeSelect id="visual-flow" name="flow" defaultValue={flow ?? ""} className="w-full">
             <NativeSelectOption value="">Any</NativeSelectOption>
-            {FLOW.keys.map((key) => (
-              <NativeSelectOption key={key} value={key}>
-                {FLOW.labels[key]}
+            {tagOptions(catalog.flows).map((option) => (
+              <NativeSelectOption key={option.value} value={option.value}>
+                {option.label}
               </NativeSelectOption>
             ))}
           </NativeSelect>
@@ -88,7 +89,7 @@ async function VisualsView({ searchParams }: { searchParams: PageProps<"/visuals
               </Link>
               <p className="text-sm text-soft-foreground">{visual.caption ?? "No caption yet"}</p>
               <p className="flex gap-3 text-sm text-muted-foreground">
-                {visual.flow && <span>{FLOW.labels[visual.flow]}</span>}
+                {visual.flow && <span>{tagLabel(catalog.flows, visual.flow)}</span>}
                 {visual.figma_link && (
                   <a href={visual.figma_link} target="_blank" rel="noopener noreferrer" className="text-foreground underline underline-offset-4">
                     Figma frame<span className="sr-only"> (opens in a new tab)</span>

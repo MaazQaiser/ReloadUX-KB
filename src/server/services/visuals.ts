@@ -18,6 +18,7 @@ import {
   updateVisual,
 } from "@/server/repositories/visuals";
 import { getImageStore } from "@/server/storage";
+import { getTagCatalog } from "@/server/services/tags";
 
 /** A screenshot as screens render it: the URL goes through the auth-checked file route. */
 export interface VisualView {
@@ -86,6 +87,9 @@ export async function uploadVisuals(
 export async function editVisual(editor: User, id: string, raw: unknown) {
   const edit = visualEditSchema.safeParse(raw);
   if (!edit.success) return err({ kind: "invalid" as const, issues: toValidationIssues(edit.error) });
+  if (edit.data.flow && !(edit.data.flow in (await getTagCatalog()).flows.labels)) {
+    return err({ kind: "invalid" as const, issues: [{ path: "flow", message: "isn't a known flow" }] });
+  }
   const updated = await updateVisual(id, edit.data, editor.id);
   return updated ? ok(toView(updated)) : err({ kind: "not_found" as const });
 }

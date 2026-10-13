@@ -11,10 +11,11 @@ import {
 } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { AI_FEATURE, FLOW, INDUSTRY, PRODUCT_TYPE, PROJECT_STATUS, SERVICE } from "@/lib/constants";
+import { PROJECT_STATUS } from "@/lib/constants";
+import { tagOptions as catalogOptions, type TagCatalog } from "@/lib/tag-catalog";
 import { toSlug } from "@/lib/slug";
 import type { LinkField, ProjectFormValues } from "@/schemas/project-form";
-import { ChipGroup, fieldId, SelectField, tagOptions, TextAreaField, TextField } from "./fields";
+import { ChipGroup, fieldId, SelectField, TextAreaField, TextField } from "./fields";
 import { PeopleFields } from "./people-fields";
 import { RowList } from "./row-list";
 
@@ -36,8 +37,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 type FormProps =
-  | { mode: "create"; initial: ProjectFormValues; people: FormPerson[] }
-  | { mode: "edit"; initial: ProjectFormValues; people: FormPerson[]; project: { id: string; slug: string } };
+  | { mode: "create"; initial: ProjectFormValues; people: FormPerson[]; catalog: TagCatalog }
+  | { mode: "edit"; initial: ProjectFormValues; people: FormPerson[]; catalog: TagCatalog; project: { id: string; slug: string } };
 
 export function ProjectForm(props: FormProps) {
   const router = useRouter();
@@ -110,8 +111,8 @@ export function ProjectForm(props: FormProps) {
             hint={slug ? `Address: /projects/${slug}${props.mode === "edit" ? " (doesn't change)" : ""}` : undefined}
           />
           <TextField path="client_name" label="Client" value={values.client_name} onChange={(value) => set("client_name", value)} error={errors.client_name} />
-          <SelectField path="industry" label="Industry" required value={values.industry} onChange={(value) => set("industry", value as ProjectFormValues["industry"])} options={tagOptions(INDUSTRY)} error={errors.industry} />
-          <SelectField path="status" label="Status" required value={values.status} onChange={(value) => set("status", value as ProjectFormValues["status"])} options={tagOptions(PROJECT_STATUS)} error={errors.status} />
+          <SelectField path="industry" label="Industry" required value={values.industry} onChange={(value) => set("industry", value as ProjectFormValues["industry"])} options={catalogOptions(props.catalog.industry)} error={errors.industry} />
+          <SelectField path="status" label="Status" required value={values.status} onChange={(value) => set("status", value as ProjectFormValues["status"])} options={PROJECT_STATUS.keys.map((key) => ({ value: key, label: PROJECT_STATUS.labels[key] }))} error={errors.status} />
           <TextField path="country" label="Country" value={values.country} onChange={(value) => set("country", value)} error={errors.country} />
           <div className="flex items-center gap-2 pt-6">
             <input id={fieldId("nda")} type="checkbox" checked={values.nda} onChange={(event) => set("nda", event.target.checked)} className="size-4" />
@@ -121,10 +122,10 @@ export function ProjectForm(props: FormProps) {
       </Section>
 
       <Section title="Type and scope">
-        <ChipGroup path="product_types" legend="Product type" required options={tagOptions(PRODUCT_TYPE)} selected={values.product_types} onChange={(next) => set("product_types", next)} error={errors.product_types} />
-        <ChipGroup path="services" legend="Services" options={tagOptions(SERVICE)} selected={values.services} onChange={(next) => set("services", next)} error={errors.services} />
-        <ChipGroup path="ai_features" legend="AI features" options={tagOptions(AI_FEATURE)} selected={values.ai_features} onChange={(next) => set("ai_features", next)} error={errors.ai_features} />
-        <ChipGroup path="flows" legend="Flows" options={tagOptions(FLOW)} selected={values.flows} onChange={(next) => set("flows", next)} error={errors.flows} />
+        <ChipGroup path="product_types" legend="Product type" required options={catalogOptions(props.catalog.product_types)} selected={values.product_types} onChange={(next) => set("product_types", next)} error={errors.product_types} />
+        <ChipGroup path="services" legend="Services" options={catalogOptions(props.catalog.services)} selected={values.services} onChange={(next) => set("services", next)} error={errors.services} />
+        <ChipGroup path="ai_features" legend="AI features" options={catalogOptions(props.catalog.ai_features)} selected={values.ai_features} onChange={(next) => set("ai_features", next)} error={errors.ai_features} />
+        <ChipGroup path="flows" legend="Flows" options={catalogOptions(props.catalog.flows)} selected={values.flows} onChange={(next) => set("flows", next)} error={errors.flows} />
       </Section>
 
       <Section title="People">

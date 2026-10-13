@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { TagBadges } from "@/components/tag-badges";
-import { INDUSTRY, PRODUCT_TYPE } from "@/lib/constants";
 import type { AnswerProject } from "@/schemas/answer";
+import { builtInCatalog, tagLabel } from "@/lib/tag-catalog";
+
+// Built-in labels are enough here; a value added in Settings falls back to a readable key.
+const BUILT_IN = builtInCatalog();
 
 export function AnswerProjectCard({ project }: { project: AnswerProject }) {
   return (
     <article className="flex h-full flex-col gap-3 border bg-card p-5">
       <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
-        {INDUSTRY.labels[project.industry]}
+        {tagLabel(BUILT_IN.industry, project.industry)}
       </p>
       <h3 className="text-xl leading-snug">
         <Link href={`/projects/${project.slug}`} className="underline-offset-4 hover:underline">
@@ -16,7 +19,7 @@ export function AnswerProjectCard({ project }: { project: AnswerProject }) {
         </Link>
       </h3>
       <p className="text-sm text-soft-foreground">{project.why}</p>
-      <TagBadges list={PRODUCT_TYPE} values={project.product_types} variant="outline" />
+      <TagBadges list={BUILT_IN.product_types} values={project.product_types} variant="outline" />
       {project.links.length > 0 && (
         <ul className="mt-auto flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-sm">
           {project.links.map((link) => (

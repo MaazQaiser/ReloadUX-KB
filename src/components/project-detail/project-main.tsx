@@ -1,16 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { TagBadges } from "@/components/tag-badges";
-import { AI_FEATURE, FLOW, INDUSTRY, PRODUCT_TYPE, PROJECT_STATUS, SERVICE } from "@/lib/constants";
+import { PROJECT_STATUS } from "@/lib/constants";
+import { tagLabel, type TagCatalog } from "@/lib/tag-catalog";
 import type { Project } from "@/schemas/project";
 import { VisualGallery } from "@/components/visuals/visual-gallery";
 import type { VisualView } from "@/server/services/visuals";
 import { DetailSection, Field, FieldList, NotRecorded } from "./section";
 
-export function ProjectHeader({ project }: { project: Project }) {
+export function ProjectHeader({ project, catalog }: { project: Project; catalog: TagCatalog }) {
   return (
     <header className="flex flex-col gap-4">
       <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
-        {INDUSTRY.labels[project.industry]} · {PROJECT_STATUS.labels[project.status]}
+        {tagLabel(catalog.industry, project.industry)} · {PROJECT_STATUS.labels[project.status]}
       </p>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-4xl leading-tight sm:text-6xl">{project.name}</h1>
@@ -20,7 +21,7 @@ export function ProjectHeader({ project }: { project: Project }) {
         {project.client_name ?? "Client not recorded"}
         {project.country && ` · ${project.country}`}
       </p>
-      <TagBadges list={PRODUCT_TYPE} values={project.product_types} variant="outline" />
+      <TagBadges list={catalog.product_types} values={project.product_types} variant="outline" />
     </header>
   );
 }
@@ -32,7 +33,7 @@ const STORY_FIELDS = [
   ["testimonial", "Testimonial"],
 ] as const;
 
-export function ProjectMain({ project, gallery }: { project: Project; gallery: VisualView[] }) {
+export function ProjectMain({ project, gallery, catalog }: { project: Project; gallery: VisualView[]; catalog: TagCatalog }) {
   const story = STORY_FIELDS.filter(([field]) => project[field]);
 
   return (
@@ -44,13 +45,13 @@ export function ProjectMain({ project, gallery }: { project: Project; gallery: V
       <DetailSection title="Scope">
         <FieldList>
           <Field label="Services">
-            {project.services.length > 0 ? <TagBadges list={SERVICE} values={project.services} /> : null}
+            {project.services.length > 0 ? <TagBadges list={catalog.services} values={project.services} /> : null}
           </Field>
           <Field label="AI features">
-            {project.ai_features.length > 0 ? <TagBadges list={AI_FEATURE} values={project.ai_features} /> : null}
+            {project.ai_features.length > 0 ? <TagBadges list={catalog.ai_features} values={project.ai_features} /> : null}
           </Field>
           <Field label="Flows">
-            {project.flows.length > 0 ? <TagBadges list={FLOW} values={project.flows} /> : null}
+            {project.flows.length > 0 ? <TagBadges list={catalog.flows} values={project.flows} /> : null}
           </Field>
         </FieldList>
       </DetailSection>
@@ -89,7 +90,7 @@ export function ProjectMain({ project, gallery }: { project: Project; gallery: V
 
       <DetailSection title="Visuals">
         {gallery.length > 0 ? (
-          <VisualGallery visuals={gallery} projectName={project.name} />
+          <VisualGallery visuals={gallery} projectName={project.name} flows={catalog.flows} />
         ) : (
           <p className="text-sm text-muted-foreground">No screenshots yet.</p>
         )}

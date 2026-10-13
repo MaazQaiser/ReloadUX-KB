@@ -11,7 +11,7 @@ describe("projectFiltersSchema", () => {
   });
 
   it("rejects unknown tags, bad ids and out-of-range years", () => {
-    expect(projectFiltersSchema.safeParse({ industry: "crypto" }).success).toBe(false);
+    expect(projectFiltersSchema.safeParse({ industry: "Crypto!" }).success).toBe(false);
     expect(projectFiltersSchema.safeParse({ designer: "sara" }).success).toBe(false);
     expect(projectFiltersSchema.safeParse({ year: "1999" }).success).toBe(false);
     expect(projectFiltersSchema.safeParse({ q: "x".repeat(101) }).success).toBe(false);
@@ -39,7 +39,7 @@ describe("parseProjectSearch", () => {
   });
 
   it("drops invalid params one by one and reports them", () => {
-    expect(parseProjectSearch({ industry: "crypto", flow: "onboarding", page: "-3" })).toEqual({
+    expect(parseProjectSearch({ industry: "Crypto!", flow: "onboarding", page: "-3" })).toEqual({
       filters: { flow: "onboarding" },
       pagination: { page: 1, page_size: 24 },
       ignored: ["industry", "page"],

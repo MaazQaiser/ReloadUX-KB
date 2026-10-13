@@ -7,6 +7,7 @@ import { ProjectForm } from "@/components/project-form/project-form";
 import { emptyFormValues } from "@/lib/project-form";
 import { requireRole } from "@/server/auth";
 import { listPeopleForForm } from "@/server/services/people";
+import { getTagCatalog } from "@/server/services/tags";
 
 export const metadata: Metadata = { title: "new project" };
 
@@ -30,11 +31,12 @@ export default function NewProjectPage() {
 
 async function NewProjectForm() {
   await requireRole("editor");
-  const people = await listPeopleForForm();
+  const [people, catalog] = await Promise.all([listPeopleForForm(), getTagCatalog()]);
   return (
     <ProjectForm
       mode="create"
       initial={emptyFormValues()}
+      catalog={catalog}
       people={people.map(({ id, name, roles, active }) => ({ id, name, roles, active }))}
     />
   );

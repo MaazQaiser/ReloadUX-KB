@@ -52,7 +52,7 @@ describe("projectInputSchema", () => {
 
   it("rejects labels or unknown values in tag fields", () => {
     expect(projectInputSchema.safeParse({ ...minimal, industry: "Healthcare" }).success).toBe(false);
-    expect(projectInputSchema.safeParse({ ...minimal, flows: ["onboarding", "kyc"] }).success).toBe(false);
+    expect(projectInputSchema.safeParse({ ...minimal, flows: ["onboarding", "KYC flow"] }).success).toBe(false);
   });
 
   it("accepts a fully filled project", () => {

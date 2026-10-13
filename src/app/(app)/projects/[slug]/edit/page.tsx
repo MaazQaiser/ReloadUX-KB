@@ -10,6 +10,7 @@ import { slugSchema } from "@/schemas/common";
 import { requireRole } from "@/server/auth";
 import { listPeopleForForm } from "@/server/services/people";
 import { getProjectForEdit } from "@/server/services/projects";
+import { getTagCatalog } from "@/server/services/tags";
 import { getProjectGallery } from "@/server/services/visuals";
 import { VisualsManager } from "@/components/visuals/visuals-manager";
 
@@ -32,7 +33,7 @@ async function EditProjectForm({ params }: { params: Promise<{ slug: string }> }
 
   const [project, people] = await Promise.all([getProjectForEdit(slug.data), listPeopleForForm()]);
   if (!project) notFound();
-  const gallery = await getProjectGallery(project.id);
+  const [gallery, catalog] = await Promise.all([getProjectGallery(project.id), getTagCatalog()]);
 
   return (
     <>
@@ -52,9 +53,10 @@ async function EditProjectForm({ params }: { params: Promise<{ slug: string }> }
         mode="edit"
         initial={toFormValues(project)}
         project={{ id: project.id, slug: project.slug }}
+        catalog={catalog}
         people={people.map(({ id, name, roles, active }) => ({ id, name, roles, active }))}
       />
-      <VisualsManager slug={project.slug} visuals={gallery} />
+      <VisualsManager slug={project.slug} visuals={gallery} flows={catalog.flows} />
     </>
   );
 }

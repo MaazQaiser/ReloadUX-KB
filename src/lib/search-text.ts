@@ -1,26 +1,25 @@
-import { AI_FEATURE, FLOW, INDUSTRY, PRODUCT_TYPE, PROJECT_STATUS, SERVICE, type TagList } from "./constants";
+import { PROJECT_STATUS } from "./constants";
+import { tagLabel, type CatalogList, type TagCatalog } from "./tag-catalog";
 import type { ProjectFields } from "@/schemas/project";
 
-function labels<K extends string>(list: TagList<K>, keys: readonly K[]): string[] {
-  return keys.map((key) => list.labels[key]);
-}
+const labels = (list: CatalogList, keys: readonly string[]) => keys.map((key) => tagLabel(list, key));
 
 /**
  * The text keyword search indexes for a project: names, tag labels (what
  * people type, not the stored keys), story fields and people's names.
  * Links and dates are left out; they're matched by filters, not words.
  */
-export function buildSearchText(project: ProjectFields, peopleNames: readonly string[]): string {
+export function buildSearchText(project: ProjectFields, peopleNames: readonly string[], catalog: TagCatalog): string {
   const parts = [
     project.name,
     project.client_name,
     project.country,
-    INDUSTRY.labels[project.industry],
+    tagLabel(catalog.industry, project.industry),
     PROJECT_STATUS.labels[project.status],
-    ...labels(PRODUCT_TYPE, project.product_types),
-    ...labels(SERVICE, project.services),
-    ...labels(AI_FEATURE, project.ai_features.filter((feature) => feature !== "none")),
-    ...labels(FLOW, project.flows),
+    ...labels(catalog.product_types, project.product_types),
+    ...labels(catalog.services, project.services),
+    ...labels(catalog.ai_features, project.ai_features.filter((feature) => feature !== "none")),
+    ...labels(catalog.flows, project.flows),
     ...peopleNames,
     project.delivered_to?.name,
     project.summary,

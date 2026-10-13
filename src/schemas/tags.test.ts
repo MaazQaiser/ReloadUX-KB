@@ -9,7 +9,10 @@ describe("tag schemas", () => {
   });
 
   it("reject unknown tags", () => {
-    expect(industrySchema.safeParse("crypto").success).toBe(false);
+    // Whether a well-formed key exists is checked against the tag catalog when saving.
+    expect(industrySchema.safeParse("crypto").success).toBe(true);
+    expect(industrySchema.safeParse("Crypto!").success).toBe(false);
+    expect(industrySchema.safeParse("").success).toBe(false);
   });
 
   it("reject repeated multi-tags", () => {

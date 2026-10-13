@@ -7,7 +7,7 @@ import { ApproveDraftForm } from "@/components/review/approve-draft-form";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCompleteness } from "@/lib/completeness";
-import { INDUSTRY } from "@/lib/constants";
+import { tagLabel } from "@/lib/tag-catalog";
 import { formatDate } from "@/lib/format";
 import { GapItem } from "@/components/review/gap-item";
 import { VerifiedAnswerForm } from "@/components/review/verified-answer-form";
@@ -16,6 +16,7 @@ import { requireRole } from "@/server/auth";
 import { listOpenGaps, listVerifiedAnswers } from "@/server/services/learning";
 import { listProjectOptions } from "@/server/services/projects";
 import { listDrafts } from "@/server/services/review";
+import { getTagCatalog } from "@/server/services/tags";
 
 export const metadata: Metadata = { title: "review" };
 
@@ -36,11 +37,12 @@ export default function ReviewPage() {
 
 async function ReviewView() {
   await requireRole("admin");
-  const [drafts, gaps, answers, projects] = await Promise.all([
+  const [drafts, gaps, answers, projects, catalog] = await Promise.all([
     listDrafts(),
     listOpenGaps(),
     listVerifiedAnswers(),
     listProjectOptions(),
+    getTagCatalog(),
   ]);
 
   return (
@@ -58,7 +60,7 @@ async function ReviewView() {
                 <li key={draft.id} className="flex flex-col gap-4 border-b py-5 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex flex-col gap-1">
                     <p className="text-xs tracking-[0.08em] text-muted-foreground uppercase">
-                      {INDUSTRY.labels[draft.industry]} · {score}% complete · updated {formatDate(draft.updated_at)}
+                      {tagLabel(catalog.industry, draft.industry)} · {score}% complete · updated {formatDate(draft.updated_at)}
                     </p>
                     <h3 className="font-heading text-2xl">{draft.name}</h3>
                     <p className="max-w-2xl text-soft-foreground">{draft.summary}</p>

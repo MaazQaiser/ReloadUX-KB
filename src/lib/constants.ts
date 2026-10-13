@@ -128,3 +128,28 @@ export const STARTER_QUESTIONS: readonly string[] = [
 /** Long enough for a pasted brief, short enough to keep a single turn cheap. */
 export const MAX_QUESTION_LENGTH = 1000;
 export const MAX_FEEDBACK_NOTE_LENGTH = 1000;
+
+/**
+ * Tag lists admins can add values to in Settings. Built-in values here never
+ * change; added ones live in the tag_values collection. Status and roles stay
+ * fixed because code depends on each value.
+ */
+export const EXTENDABLE_TAG_LISTS = {
+  industry: INDUSTRY,
+  product_types: PRODUCT_TYPE,
+  services: SERVICE,
+  ai_features: AI_FEATURE,
+  flows: FLOW,
+} as const;
+
+export type TagListName = keyof typeof EXTENDABLE_TAG_LISTS;
+
+export const TAG_LIST_NAMES = Object.keys(EXTENDABLE_TAG_LISTS) as TagListName[];
+
+export const TAG_LIST_TITLES: Record<TagListName, string> = {
+  industry: "Industry",
+  product_types: "Product type",
+  services: "Services",
+  ai_features: "AI features",
+  flows: "Flows",
+};

@@ -1,23 +1,20 @@
 import { z } from "zod";
-import {
-  AI_FEATURE,
-  FLOW,
-  INDUSTRY,
-  PERSON_ROLE,
-  PRODUCT_TYPE,
-  PROJECT_STATUS,
-  REVIEW_STATUS,
-  SERVICE,
-  USER_ROLE,
-} from "@/lib/constants";
+import { PERSON_ROLE, PROJECT_STATUS, REVIEW_STATUS, USER_ROLE } from "@/lib/constants";
 import { uniqueList } from "./common";
 
-export const industrySchema = z.enum(INDUSTRY.keys);
+/**
+ * Keys for lists admins can extend (see EXTENDABLE_TAG_LISTS). The shape is
+ * checked here; that the key really exists (built in or added) is checked
+ * by the save services against the tag catalog.
+ */
+export const tagKeySchema = z.string().regex(/^[a-z][a-z0-9_]{0,59}$/, "isn't a known value");
+
+export const industrySchema = tagKeySchema;
 export const projectStatusSchema = z.enum(PROJECT_STATUS.keys);
-export const productTypeSchema = z.enum(PRODUCT_TYPE.keys);
-export const serviceSchema = z.enum(SERVICE.keys);
-export const aiFeatureSchema = z.enum(AI_FEATURE.keys);
-export const flowSchema = z.enum(FLOW.keys);
+export const productTypeSchema = tagKeySchema;
+export const serviceSchema = tagKeySchema;
+export const aiFeatureSchema = tagKeySchema;
+export const flowSchema = tagKeySchema;
 export const personRoleSchema = z.enum(PERSON_ROLE.keys);
 export const reviewStatusSchema = z.enum(REVIEW_STATUS.keys);
 export const userRoleSchema = z.enum(USER_ROLE.keys);

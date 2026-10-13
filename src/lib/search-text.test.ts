@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { projectInputSchema } from "@/schemas/project";
 import { buildSearchText } from "./search-text";
+import { builtInCatalog } from "./tag-catalog";
+
+const catalog = builtInCatalog();
 
 const project = projectInputSchema.parse({
   name: "Calmly Care",
@@ -18,7 +21,7 @@ const project = projectInputSchema.parse({
 });
 
 describe("buildSearchText", () => {
-  const text = buildSearchText(project, ["Sara Malik"]);
+  const text = buildSearchText(project, ["Sara Malik"], catalog);
 
   it("uses tag labels people search for, not stored keys", () => {
     expect(text).toContain("healthcare");
@@ -36,7 +39,7 @@ describe("buildSearchText", () => {
 
   it("leaves out links and the 'none' AI feature", () => {
     expect(text).not.toContain("example.com");
-    const plain = buildSearchText({ ...project, ai_features: ["none"] }, []);
+    const plain = buildSearchText({ ...project, ai_features: ["none"] }, [], catalog);
     expect(plain.split("\n")).not.toContain("none");
   });
 

@@ -11,6 +11,7 @@ import { hasRole } from "@/lib/auth-rules";
 import { parseProjectSearch, type RawSearchParams } from "@/schemas/project-filters";
 import { requireRole } from "@/server/auth";
 import { getGridFilterOptions, listProjectsForGrid } from "@/server/services/projects";
+import { getTagCatalog } from "@/server/services/tags";
 
 export const metadata: Metadata = { title: "projects" };
 
@@ -32,13 +33,17 @@ export default function ProjectsPage({ searchParams }: PageProps<"/projects">) {
 async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
   const user = await requireRole("viewer");
   const { filters, pagination, ignored } = parseProjectSearch(await searchParams);
-  const [page, options] = await Promise.all([listProjectsForGrid(filters, pagination), getGridFilterOptions()]);
+  const [page, options, catalog] = await Promise.all([
+    listProjectsForGrid(filters, pagination),
+    getGridFilterOptions(),
+    getTagCatalog(),
+  ]);
   const hasFilters = Object.values(filters).some((value) => value !== undefined);
 
   return (
     <>
       {/* Keyed on the filters so the inputs reset to the URL after each navigation. */}
-      <ProjectFiltersForm key={JSON.stringify(filters)} filters={filters} options={options} />
+      <ProjectFiltersForm key={JSON.stringify(filters)} filters={filters} options={options} catalog={catalog} />
 
       {ignored.length > 0 && (
         <p role="status" className="text-sm text-muted-foreground">
@@ -75,7 +80,7 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
         <ul className="grid border-t border-l sm:grid-cols-2 lg:grid-cols-3">
           {page.items.map((item) => (
             <li key={item.project.id} className="border-r border-b">
-              <ProjectCard item={item} />
+              <ProjectCard item={item} catalog={catalog} />
             </li>
           ))}
         </ul>

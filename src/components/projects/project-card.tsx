@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { TagBadges } from "@/components/tag-badges";
-import { AI_FEATURE, INDUSTRY, PRODUCT_TYPE, PROJECT_STATUS } from "@/lib/constants";
+import { PROJECT_STATUS } from "@/lib/constants";
+import { tagLabel, type TagCatalog } from "@/lib/tag-catalog";
 import { formatYear } from "@/lib/format";
 import type { ProjectGridItem } from "@/server/services/projects";
 
 /** A tile in the hairline grid, like the work grid on reloadux.com. */
-export function ProjectCard({ item: { project, leadDesigner } }: { item: ProjectGridItem }) {
+export function ProjectCard({ item: { project, leadDesigner }, catalog }: { item: ProjectGridItem; catalog: TagCatalog }) {
   const aiFeatures = project.ai_features.filter((feature) => feature !== "none");
   const when = project.delivery_date
     ? `Delivered ${formatYear(project.delivery_date)}`
@@ -16,7 +17,7 @@ export function ProjectCard({ item: { project, leadDesigner } }: { item: Project
     <article className="group relative flex h-full flex-col gap-5 bg-background p-6 transition-colors focus-within:bg-card hover:bg-card sm:p-8">
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
-          {INDUSTRY.labels[project.industry]} · {when}
+          {tagLabel(catalog.industry, project.industry)} · {when}
         </p>
         {project.nda && <Badge variant="outline">NDA</Badge>}
       </div>
@@ -34,8 +35,8 @@ export function ProjectCard({ item: { project, leadDesigner } }: { item: Project
       </div>
       <p className="line-clamp-3 text-soft-foreground">{project.summary}</p>
       <div className="mt-auto flex flex-col gap-2">
-        <TagBadges list={PRODUCT_TYPE} values={project.product_types} variant="outline" />
-        {aiFeatures.length > 0 && <TagBadges list={AI_FEATURE} values={aiFeatures} />}
+        <TagBadges list={catalog.product_types} values={project.product_types} variant="outline" />
+        {aiFeatures.length > 0 && <TagBadges list={catalog.ai_features} values={aiFeatures} />}
       </div>
       <p className="border-t pt-4 text-sm text-muted-foreground">
         Lead <span className="text-foreground">{leadDesigner?.name ?? "not recorded"}</span>

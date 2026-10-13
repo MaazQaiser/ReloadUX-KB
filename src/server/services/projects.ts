@@ -1,6 +1,7 @@
 import "server-only";
 import { getCompleteness, type Completeness } from "@/lib/completeness";
 import { buildSearchText } from "@/lib/search-text";
+import { getTagCatalog, unknownTags } from "@/server/services/tags";
 import { err, ok, toValidationIssues, type Result, type ValidationIssue } from "@/lib/result";
 import type { Actor } from "@/schemas/common";
 import type { Person } from "@/schemas/person";
@@ -38,12 +39,23 @@ async function prepareProject(input: ProjectInput): Promise<Result<PreparedProje
 
   const { lead_designer, designers, account_manager } = parsed.data;
   const referenced = [...new Set([lead_designer, ...designers, ...(account_manager ? [account_manager] : [])])];
+  const catalog = await getTagCatalog();
+  const unknownTagValues = unknownTags(catalog, {
+    industry: [parsed.data.industry],
+    product_types: parsed.data.product_types,
+    services: parsed.data.services,
+    ai_features: parsed.data.ai_features,
+    flows: parsed.data.flows,
+  });
+  const tagIssues = Object.entries(unknownTagValues).map(([list, keys]) => ({ path: list, message: `not a known value: ${keys.join(", ")}` }));
+  if (tagIssues.length > 0) return err({ kind: "invalid", issues: tagIssues });
+
   const people = await findPeopleByIds(referenced);
   const found = new Set(people.map((person) => person.id));
   const unknown = referenced.filter((id) => !found.has(id));
   if (unknown.length > 0) return err({ kind: "unknown_people", ids: unknown });
 
-  return ok({ fields: parsed.data, searchText: buildSearchText(parsed.data, people.map((person) => person.name)) });
+  return ok({ fields: parsed.data, searchText: buildSearchText(parsed.data, people.map((person) => person.name), catalog) });
 }
 
 /** Create-or-update by slug, for seeds and imports that must be safe to re-run. */

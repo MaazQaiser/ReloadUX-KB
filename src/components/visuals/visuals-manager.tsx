@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { FLOW } from "@/lib/constants";
+import { tagOptions, type CatalogList } from "@/lib/tag-catalog";
 import type { VisualView } from "@/server/services/visuals";
 import { VisualImage } from "./visual-image";
 
@@ -18,7 +18,7 @@ const UPLOAD_ERRORS: Record<string, string> = {
   project_not_found: "This project no longer exists.",
 };
 
-function VisualRow({ visual, index, count }: { visual: VisualView; index: number; count: number }) {
+function VisualRow({ visual, index, count, flows }: { visual: VisualView; index: number; count: number; flows: CatalogList }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -69,9 +69,9 @@ function VisualRow({ visual, index, count }: { visual: VisualView; index: number
             <Label htmlFor={id("flow")}>Flow</Label>
             <NativeSelect id={id("flow")} name="flow" defaultValue={visual.flow ?? ""} className="w-full">
               <NativeSelectOption value="">Not set</NativeSelectOption>
-              {FLOW.keys.map((key) => (
-                <NativeSelectOption key={key} value={key}>
-                  {FLOW.labels[key]}
+              {tagOptions(flows).map((option) => (
+                <NativeSelectOption key={option.value} value={option.value}>
+                  {option.label}
                 </NativeSelectOption>
               ))}
             </NativeSelect>
@@ -103,7 +103,7 @@ function VisualRow({ visual, index, count }: { visual: VisualView; index: number
   );
 }
 
-export function VisualsManager({ slug, visuals }: { slug: string; visuals: VisualView[] }) {
+export function VisualsManager({ slug, visuals, flows }: { slug: string; visuals: VisualView[]; flows: CatalogList }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -167,7 +167,7 @@ export function VisualsManager({ slug, visuals }: { slug: string; visuals: Visua
         ) : (
           <ol className="flex flex-col border-t">
             {visuals.map((visual, index) => (
-              <VisualRow key={visual.id} visual={visual} index={index} count={visuals.length} />
+              <VisualRow key={visual.id} visual={visual} index={index} count={visuals.length} flows={flows} />
             ))}
           </ol>
         )}

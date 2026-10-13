@@ -10,6 +10,7 @@ import { hasRole } from "@/lib/auth-rules";
 import { slugSchema } from "@/schemas/common";
 import { requireRole } from "@/server/auth";
 import { getProjectDetail } from "@/server/services/projects";
+import { getTagCatalog } from "@/server/services/tags";
 import { getProjectGallery } from "@/server/services/visuals";
 
 export const metadata: Metadata = { title: "project" };
@@ -34,12 +35,12 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
 
   const detail = await getProjectDetail(slug.data);
   if (!detail) notFound();
-  const gallery = await getProjectGallery(detail.project.id);
+  const [gallery, catalog] = await Promise.all([getProjectGallery(detail.project.id), getTagCatalog()]);
 
   return (
     <div className="flex flex-col gap-12">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <ProjectHeader project={detail.project} />
+        <ProjectHeader project={detail.project} catalog={catalog} />
         {hasRole(user.role, "editor") && (
           <Link href={`/projects/${detail.project.slug}/edit`} className={buttonVariants({ variant: "outline" })}>
             Edit project
@@ -47,7 +48,7 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
         )}
       </div>
       <div className="grid gap-16 lg:grid-cols-[1fr_22rem]">
-        <ProjectMain project={detail.project} gallery={gallery} />
+        <ProjectMain project={detail.project} gallery={gallery} catalog={catalog} />
         <ProjectSidebar detail={detail} />
       </div>
     </div>

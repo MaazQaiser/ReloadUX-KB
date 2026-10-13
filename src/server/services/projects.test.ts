@@ -15,6 +15,10 @@ import {
 
 vi.mock("@/server/repositories/people");
 vi.mock("@/server/repositories/projects");
+vi.mock("@/server/services/tags", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/server/services/tags")>()),
+  getTagCatalog: async () => (await import("@/lib/tag-catalog")).builtInCatalog(),
+}));
 
 const SARA = "64b7f0c2a1b2c3d4e5f60718";
 const ALI = "64b7f0c2a1b2c3d4e5f60719";
@@ -182,6 +186,17 @@ describe("getGridFilterOptions", () => {
 
     expect(await getGridFilterOptions()).toEqual({ designers: [person(SARA, "Sara")], years: [2025, 2024] });
     expect(peopleRepository.listPeople).toHaveBeenCalledWith({ role: "designer" });
+  });
+});
+
+describe("tag values", () => {
+  it("refuses well-formed keys that aren't in the tag catalog", async () => {
+    const result = await saveProject({ ...input, flows: ["onboarding", "kyc"] }, OPTIONS);
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: "invalid", issues: [{ path: "flows", message: "not a known value: kyc" }] },
+    });
+    expect(projectsRepository.upsertProjectBySlug).not.toHaveBeenCalled();
   });
 });
 

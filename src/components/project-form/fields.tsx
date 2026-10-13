@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import type { TagList } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 /** Stable DOM id for a form path such as "figma_files.0.url". */
@@ -130,9 +129,6 @@ export function SelectField({
   );
 }
 
-export function tagOptions<K extends string>(list: TagList<K>) {
-  return list.keys.map((key) => ({ value: key, label: list.labels[key] }));
-}
 
 /** Multi-select tags as checkbox chips: real checkboxes, so keyboard and screen readers work as expected. */
 export function ChipGroup<K extends string>({

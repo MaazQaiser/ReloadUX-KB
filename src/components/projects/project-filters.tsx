@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { AI_FEATURE, FLOW, INDUSTRY, PRODUCT_TYPE, type TagList } from "@/lib/constants";
+import { tagOptions, type TagCatalog } from "@/lib/tag-catalog";
 import type { ProjectFilters } from "@/schemas/project-filters";
 import type { GridFilterOptions } from "@/server/services/projects";
 
@@ -31,15 +31,19 @@ function SelectField({ name, label, value, options }: SelectFieldProps) {
   );
 }
 
-function tagOptions<K extends string>(list: TagList<K>) {
-  return list.keys.map((key) => ({ value: key, label: list.labels[key] }));
-}
-
 /**
  * A plain GET form: filters live in the URL, so results can be bookmarked
  * and shared, and the form works before any JavaScript loads.
  */
-export function ProjectFiltersForm({ filters, options }: { filters: ProjectFilters; options: GridFilterOptions }) {
+export function ProjectFiltersForm({
+  filters,
+  options,
+  catalog,
+}: {
+  filters: ProjectFilters;
+  options: GridFilterOptions;
+  catalog: TagCatalog;
+}) {
   return (
     <form action="/projects" method="get" role="search" aria-label="Filter projects" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
@@ -47,10 +51,10 @@ export function ProjectFiltersForm({ filters, options }: { filters: ProjectFilte
         <Input id="filter-q" name="q" type="search" className="h-12 text-base" defaultValue={filters.q} placeholder="Project or client name" maxLength={100} />
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <SelectField name="industry" label="Industry" value={filters.industry} options={tagOptions(INDUSTRY)} />
-        <SelectField name="product_type" label="Type" value={filters.product_type} options={tagOptions(PRODUCT_TYPE)} />
-        <SelectField name="ai_feature" label="AI feature" value={filters.ai_feature} options={tagOptions(AI_FEATURE)} />
-        <SelectField name="flow" label="Flow" value={filters.flow} options={tagOptions(FLOW)} />
+        <SelectField name="industry" label="Industry" value={filters.industry} options={tagOptions(catalog.industry)} />
+        <SelectField name="product_type" label="Type" value={filters.product_type} options={tagOptions(catalog.product_types)} />
+        <SelectField name="ai_feature" label="AI feature" value={filters.ai_feature} options={tagOptions(catalog.ai_features)} />
+        <SelectField name="flow" label="Flow" value={filters.flow} options={tagOptions(catalog.flows)} />
         <SelectField
           name="designer"
           label="Designer"
