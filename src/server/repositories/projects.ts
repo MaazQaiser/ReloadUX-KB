@@ -14,6 +14,7 @@ type ParsedProjectInput = z.infer<typeof projectInputSchema>;
 
 // Only approved, live records are visible; drafts wait in the review queue (phase 4).
 const VISIBLE: Filter<Document> = { review_status: "approved", deleted_at: { $exists: false } };
+const LIVE_DRAFT: Filter<Document> = { review_status: "draft", deleted_at: { $exists: false } };
 
 // Optional fields with no default. Each is unset when absent, so an edit can clear it.
 const OPTIONAL_FIELDS = Object.entries(projectInputSchema.shape)
@@ -136,7 +137,7 @@ export async function findProjectBySlug(
 }
 
 function toQuery(filters: ProjectFilters): Filter<Document> {
-  const conditions: Filter<Document>[] = [VISIBLE];
+  const conditions: Filter<Document>[] = [filters.review === "draft" ? LIVE_DRAFT : VISIBLE];
 
   if (filters.q) {
     const pattern = { $regex: escapeRegExp(filters.q), $options: "i" };
@@ -183,6 +184,26 @@ export async function listProjects(filters: ProjectFilters, { page, page_size }:
   return { items: documents.map(toProject), total };
 }
 
+/**
+ * Every match, unpaged, for orderings Mongo can't compute (completeness).
+ * Fine at this library's size (100s of projects); revisit past a few thousand.
+ */
+export async function listAllMatchingProjects(filters: ProjectFilters): Promise<Project[]> {
+  const documents = await (await projects()).find(toQuery(filters)).sort({ name: 1 }).collation({ locale: "en", strength: 2 }).toArray();
+  return documents.map(toProject);
+}
+
+/** Soft delete: the record stays for audit and undo, but nothing lists or opens it. Null if already gone. */
+export async function softDeleteProjectById(id: string, actor: Actor): Promise<Project | null> {
+  const now = new Date();
+  const saved = await (await projects()).findOneAndUpdate(
+    { _id: toObjectId(id), deleted_at: { $exists: false } },
+    { $set: { deleted_at: now, updated_by: actorSchema.parse(actor), updated_at: now } },
+    { returnDocument: "after" },
+  );
+  return saved ? toProject(saved) : null;
+}
+
 /** Delivery years that have at least one visible project, newest first, for the year filter. */
 export async function listDeliveryYears(): Promise<number[]> {
   const rows = await (await projects())
@@ -198,7 +219,7 @@ export async function listDeliveryYears(): Promise<number[]> {
 /** Drafts waiting for review (migration, admin chat), oldest first so nothing waits forever. */
 export async function listDraftProjects(): Promise<Project[]> {
   const documents = await (await projects())
-    .find({ review_status: "draft", deleted_at: { $exists: false } })
+    .find(LIVE_DRAFT)
     .sort({ updated_at: 1 })
     .toArray();
   return documents.map(toProject);

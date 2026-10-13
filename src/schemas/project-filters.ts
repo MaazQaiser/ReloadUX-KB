@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { idSchema } from "./common";
-import { aiFeatureSchema, flowSchema, industrySchema, productTypeSchema } from "./tags";
+import { aiFeatureSchema, flowSchema, industrySchema, productTypeSchema, reviewStatusSchema } from "./tags";
+
+export const PROJECT_SORTS = ["newest", "least_complete"] as const;
 
 /**
  * Filters for the Projects grid. Values arrive as URL search params, so
@@ -17,6 +19,10 @@ export const projectFiltersSchema = z.object({
   designer: idSchema.optional(),
   /** Delivery year, in UTC. */
   year: z.coerce.number().int().min(2000).max(2100).optional(),
+  /** Unset means approved. Drafts are for editors only; the page drops this for viewers. */
+  review: reviewStatusSchema.optional(),
+  /** Kept with the filters so it survives in the URL like them; unset means newest delivery first. */
+  sort: z.enum(PROJECT_SORTS).optional(),
 });
 
 export const paginationSchema = z.object({

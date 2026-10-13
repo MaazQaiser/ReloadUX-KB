@@ -7,7 +7,7 @@ import { formatYear } from "@/lib/format";
 import type { ProjectGridItem } from "@/server/services/projects";
 
 /** A tile in the hairline grid, like the work grid on reloadux.com. */
-export function ProjectCard({ item: { project, leadDesigner }, catalog }: { item: ProjectGridItem; catalog: TagCatalog }) {
+export function ProjectCard({ item: { project, leadDesigner, completeness }, catalog }: { item: ProjectGridItem; catalog: TagCatalog }) {
   const aiFeatures = project.ai_features.filter((feature) => feature !== "none");
   const when = project.delivery_date
     ? `Delivered ${formatYear(project.delivery_date)}`
@@ -19,7 +19,10 @@ export function ProjectCard({ item: { project, leadDesigner }, catalog }: { item
         <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
           {tagLabel(catalog.industry, project.industry)} · {when}
         </p>
-        {project.nda && <Badge variant="outline">NDA</Badge>}
+        <div className="flex shrink-0 gap-1">
+          {project.review_status === "draft" && <Badge variant="secondary">Draft</Badge>}
+          {project.nda && <Badge variant="outline">NDA</Badge>}
+        </div>
       </div>
       <div className="flex flex-col gap-2">
         <h2 className="text-2xl leading-snug">
@@ -38,9 +41,24 @@ export function ProjectCard({ item: { project, leadDesigner }, catalog }: { item
         <TagBadges list={catalog.product_types} values={project.product_types} variant="outline" />
         {aiFeatures.length > 0 && <TagBadges list={catalog.ai_features} values={aiFeatures} />}
       </div>
-      <p className="border-t pt-4 text-sm text-muted-foreground">
-        Lead <span className="text-foreground">{leadDesigner?.name ?? "not recorded"}</span>
-      </p>
+      <div className="flex items-center justify-between gap-4 border-t pt-4 text-sm text-muted-foreground">
+        <p>
+          Lead <span className="text-foreground">{leadDesigner?.name ?? "not recorded"}</span>
+        </p>
+        <div className="flex items-center gap-2">
+          <div
+            role="meter"
+            aria-label="Record completeness"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={completeness.score}
+            className="h-1 w-12 overflow-hidden bg-muted"
+          >
+            <div className="h-full bg-primary" style={{ width: `${completeness.score}%` }} />
+          </div>
+          <span className="tabular-nums">{completeness.score}%</span>
+        </div>
+      </div>
     </article>
   );
 }

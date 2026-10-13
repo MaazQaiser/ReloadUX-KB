@@ -1,6 +1,7 @@
 import "server-only";
 import { getCompleteness, type Completeness } from "@/lib/completeness";
 import { buildSearchText } from "@/lib/search-text";
+import { logger } from "@/server/logger";
 import { getTagCatalog, unknownTags } from "@/server/services/tags";
 import { err, ok, toValidationIssues, type Result, type ValidationIssue } from "@/lib/result";
 import type { Actor } from "@/schemas/common";
@@ -12,9 +13,11 @@ import { findPeopleByIds, listPeople } from "@/server/repositories/people";
 import {
   findProjectBySlug,
   insertProject,
+  listAllMatchingProjects,
   listAllVisibleProjects,
   listDeliveryYears,
   listProjects,
+  softDeleteProjectById,
   updateProjectById,
   upsertProjectBySlug,
 } from "@/server/repositories/projects";
@@ -135,6 +138,7 @@ export async function getProjectDetail(slug: string): Promise<ProjectDetail | nu
 export interface ProjectGridItem {
   project: Project;
   leadDesigner: Person | null;
+  completeness: Completeness;
 }
 
 export interface ProjectGridPage {
@@ -144,17 +148,52 @@ export interface ProjectGridPage {
   pageCount: number;
 }
 
+/** Least complete first sorts in memory: completeness is computed, not stored. */
+async function listGridProjects(filters: ProjectFilters, { page, page_size }: Pagination) {
+  if (filters.sort !== "least_complete") return listProjects(filters, { page, page_size });
+  const all = (await listAllMatchingProjects(filters))
+    .map((project) => ({ project, score: getCompleteness(project).score }))
+    // Stable sort, so equal scores keep the repository's name order.
+    .sort((a, b) => a.score - b.score);
+  return { items: all.slice((page - 1) * page_size, page * page_size).map(({ project }) => project), total: all.length };
+}
+
 export async function listProjectsForGrid(filters: ProjectFilters, pagination: Pagination): Promise<ProjectGridPage> {
-  const { items, total } = await listProjects(filters, pagination);
+  const { items, total } = await listGridProjects(filters, pagination);
   const leads = await findPeopleByIds([...new Set(items.map((item) => item.lead_designer))]);
   const byId = new Map(leads.map((person) => [person.id, person]));
 
   return {
-    items: items.map((project) => ({ project, leadDesigner: byId.get(project.lead_designer) ?? null })),
+    items: items.map((project) => ({
+      project,
+      leadDesigner: byId.get(project.lead_designer) ?? null,
+      completeness: getCompleteness(project),
+    })),
     total,
     page: pagination.page,
     pageCount: Math.max(1, Math.ceil(total / pagination.page_size)),
   };
+}
+
+export type DeleteProjectError = { kind: "not_found" } | { kind: "name_mismatch" };
+
+/**
+ * Soft-deletes a project (drafts too). The typed name is the confirmation step,
+ * checked here rather than only in the dialog, so a stray request can't delete.
+ */
+export async function deleteProject(
+  slug: string,
+  typedName: string,
+  actor: Actor,
+): Promise<Result<Project, DeleteProjectError>> {
+  const project = await findProjectBySlug(slug, { includeDrafts: true });
+  if (!project) return err({ kind: "not_found" });
+  if (typedName.trim() !== project.name) return err({ kind: "name_mismatch" });
+
+  const deleted = await softDeleteProjectById(project.id, actor);
+  if (!deleted) return err({ kind: "not_found" });
+  logger.info("project soft-deleted", { projectId: project.id, slug, actor });
+  return ok(deleted);
 }
 
 export interface GridFilterOptions {

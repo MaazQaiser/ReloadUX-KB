@@ -6,8 +6,10 @@ import { syncIndexes } from "@/server/db/indexes";
 import {
   findProjectBySlug,
   insertProject,
+  listAllMatchingProjects,
   listDeliveryYears,
   listProjects,
+  softDeleteProjectById,
   updateProjectById,
   upsertProjectBySlug,
 } from "@/server/repositories/projects";
@@ -214,5 +216,41 @@ describe("findProjectBySlug with drafts", () => {
 
     expect(await findProjectBySlug("elia-wellness")).toBeNull();
     expect(await findProjectBySlug("elia-wellness", { includeDrafts: true })).toMatchObject({ review_status: "draft" });
+  });
+});
+
+describe("drafts and soft delete", () => {
+  const DRAFT = { ...SEED, reviewStatus: "draft" } as const;
+
+  it("lists drafts only when asked, and never alongside approved projects", async () => {
+    await upsertProjectBySlug(elia, SEED);
+    await upsertProjectBySlug(fintua, DRAFT);
+
+    expect(await slugs({})).toEqual(["elia-wellness"]);
+    expect(await slugs({ review: "approved" })).toEqual(["elia-wellness"]);
+    expect(await slugs({ review: "draft" })).toEqual(["fintua-onboarding"]);
+  });
+
+  it("hides a soft-deleted project everywhere but keeps the record", async () => {
+    const saved = await upsertProjectBySlug(elia, SEED);
+    await upsertProjectBySlug(ledger, SEED);
+
+    const deleted = await softDeleteProjectById(saved.id, "system:test");
+
+    expect(deleted?.deleted_at).toBeInstanceOf(Date);
+    expect(deleted?.updated_by).toBe("system:test");
+    expect(await slugs({})).toEqual(["ledger-hrms"]);
+    expect(await findProjectBySlug("elia-wellness", { includeDrafts: true })).toBeNull();
+    expect(await (await collection()).countDocuments({ slug: "elia-wellness" })).toBe(1);
+    expect(await softDeleteProjectById(saved.id, "system:test")).toBeNull();
+  });
+
+  it("returns every match unpaged for in-memory sorting", async () => {
+    await upsertProjectBySlug(elia, SEED);
+    await upsertProjectBySlug(fintua, SEED);
+    await upsertProjectBySlug(ledger, SEED);
+
+    const all = await listAllMatchingProjects({ flow: "onboarding" });
+    expect(all.map((item) => item.slug)).toEqual(["elia-wellness", "fintua-onboarding"]);
   });
 });

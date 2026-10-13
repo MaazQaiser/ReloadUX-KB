@@ -12,15 +12,17 @@ interface SelectFieldProps {
   label: string;
   value: string | undefined;
   options: { value: string; label: string }[];
+  /** What the empty choice means; "Any" for filters, the default for show and sort. */
+  emptyLabel?: string;
 }
 
-function SelectField({ name, label, value, options }: SelectFieldProps) {
+function SelectField({ name, label, value, options, emptyLabel = "Any" }: SelectFieldProps) {
   const id = `filter-${name}`;
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       <NativeSelect id={id} name={name} defaultValue={value ?? ""} className="w-full">
-        <NativeSelectOption value="">Any</NativeSelectOption>
+        <NativeSelectOption value="">{emptyLabel}</NativeSelectOption>
         {options.map((option) => (
           <NativeSelectOption key={option.value} value={option.value}>
             {option.label}
@@ -39,10 +41,12 @@ export function ProjectFiltersForm({
   filters,
   options,
   catalog,
+  canSeeDrafts,
 }: {
   filters: ProjectFilters;
   options: GridFilterOptions;
   catalog: TagCatalog;
+  canSeeDrafts: boolean;
 }) {
   return (
     <form action="/projects" method="get" role="search" aria-label="Filter projects" className="flex flex-col gap-4">
@@ -69,6 +73,24 @@ export function ProjectFiltersForm({
           label="Delivered"
           value={filters.year?.toString()}
           options={options.years.map((year) => ({ value: String(year), label: String(year) }))}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        {canSeeDrafts && (
+          <SelectField
+            name="review"
+            label="Show"
+            value={filters.review === "draft" ? "draft" : undefined}
+            emptyLabel="Approved projects"
+            options={[{ value: "draft", label: "Drafts waiting for review" }]}
+          />
+        )}
+        <SelectField
+          name="sort"
+          label="Sort"
+          value={filters.sort === "least_complete" ? "least_complete" : undefined}
+          emptyLabel="Newest delivery"
+          options={[{ value: "least_complete", label: "Least complete first" }]}
         />
       </div>
       <div className="flex items-center gap-4">

@@ -8,7 +8,13 @@ import { projectFormValuesSchema } from "@/schemas/project-form";
 import { personRoleSchema } from "@/schemas/tags";
 import { requireRole } from "@/server/auth";
 import { createPerson } from "@/server/services/people";
-import { createProject, updateProject, type CreateProjectError, type UpdateProjectError } from "@/server/services/projects";
+import {
+  createProject,
+  deleteProject,
+  updateProject,
+  type CreateProjectError,
+  type UpdateProjectError,
+} from "@/server/services/projects";
 
 export type ProjectActionResult =
   | { ok: true; slug: string }
@@ -100,4 +106,19 @@ export async function createPersonAction(raw: unknown): Promise<PersonActionResu
 
 function pickPerson({ id, name, roles, active }: FormPerson): FormPerson {
   return { id, name, roles, active };
+}
+
+export type DeleteProjectActionResult = { ok: true } | { ok: false; message: string };
+
+/** Admins only. The typed name is checked again by the service, not just by the dialog. */
+export async function deleteProjectAction(slug: unknown, typedName: unknown): Promise<DeleteProjectActionResult> {
+  const user = await requireRole("admin");
+  const input = z.object({ slug: slugSchema, typedName: z.string().max(200) }).safeParse({ slug, typedName });
+  if (!input.success) return { ok: false, message: "The request couldn't be read. Reload the page and try again." };
+
+  const result = await deleteProject(input.data.slug, input.data.typedName, user.id);
+  if (result.ok) return { ok: true };
+  return result.error.kind === "name_mismatch"
+    ? { ok: false, message: "The name doesn't match. Type it exactly as shown." }
+    : { ok: false, message: "This project was already deleted." };
 }

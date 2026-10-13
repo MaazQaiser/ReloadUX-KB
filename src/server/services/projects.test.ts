@@ -5,6 +5,7 @@ import * as peopleRepository from "@/server/repositories/people";
 import * as projectsRepository from "@/server/repositories/projects";
 import {
   createProject,
+  deleteProject,
   getGridFilterOptions,
   getProjectDetail,
   getProjectForEdit,
@@ -272,5 +273,47 @@ describe("getProjectForEdit", () => {
     vi.mocked(projectsRepository.findProjectBySlug).mockResolvedValue(stored);
     await getProjectForEdit("elia-wellness");
     expect(projectsRepository.findProjectBySlug).toHaveBeenCalledWith("elia-wellness", { includeDrafts: true });
+  });
+});
+
+describe("listProjectsForGrid sorted least complete first", () => {
+  it("sorts every match by completeness, then pages in memory", async () => {
+    const full = { ...stored, id: "64b7f0c2a1b2c3d4e5f60722", slug: "full", challenge: "Long forms.", outcomes: "Faster intake.", country: "UK" };
+    const mid = { ...stored, id: "64b7f0c2a1b2c3d4e5f60723", slug: "mid" };
+    const low = { ...stored, id: "64b7f0c2a1b2c3d4e5f60724", slug: "low", designers: [] };
+    vi.mocked(projectsRepository.listAllMatchingProjects).mockResolvedValue([full, mid, low]);
+    vi.mocked(peopleRepository.findPeopleByIds).mockResolvedValue([]);
+
+    const page = await listProjectsForGrid({ sort: "least_complete" }, { page: 1, page_size: 2 });
+
+    expect(projectsRepository.listProjects).not.toHaveBeenCalled();
+    expect(page.items.map((item) => item.project.slug)).toEqual(["low", "mid"]);
+    expect(page.items[0]!.completeness.score).toBeLessThan(page.items[1]!.completeness.score);
+    expect(page).toMatchObject({ total: 3, pageCount: 2 });
+  });
+});
+
+describe("deleteProject", () => {
+  it("soft-deletes when the typed name matches exactly", async () => {
+    vi.mocked(projectsRepository.findProjectBySlug).mockResolvedValue(stored);
+    vi.mocked(projectsRepository.softDeleteProjectById).mockResolvedValue({ ...stored, deleted_at: new Date() });
+
+    const result = await deleteProject("elia-wellness", "  Elia Wellness ", "system:test");
+
+    expect(result.ok).toBe(true);
+    expect(projectsRepository.findProjectBySlug).toHaveBeenCalledWith("elia-wellness", { includeDrafts: true });
+    expect(projectsRepository.softDeleteProjectById).toHaveBeenCalledWith(stored.id, "system:test");
+  });
+
+  it("refuses a name that doesn't match, without writing", async () => {
+    vi.mocked(projectsRepository.findProjectBySlug).mockResolvedValue(stored);
+
+    expect(await deleteProject("elia-wellness", "elia wellness", "system:test")).toEqual({ ok: false, error: { kind: "name_mismatch" } });
+    expect(projectsRepository.softDeleteProjectById).not.toHaveBeenCalled();
+  });
+
+  it("reports a project that is already gone", async () => {
+    vi.mocked(projectsRepository.findProjectBySlug).mockResolvedValue(null);
+    expect(await deleteProject("gone", "Gone", "system:test")).toEqual({ ok: false, error: { kind: "not_found" } });
   });
 });

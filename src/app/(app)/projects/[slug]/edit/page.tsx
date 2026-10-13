@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
+import { DeleteProject } from "@/components/project-form/delete-project";
 import { FormSkeleton } from "@/components/project-form/form-skeleton";
 import { ProjectForm } from "@/components/project-form/project-form";
+import { hasRole } from "@/lib/auth-rules";
 import { toFormValues } from "@/lib/project-form";
 import { slugSchema } from "@/schemas/common";
 import { requireRole } from "@/server/auth";
@@ -27,7 +29,7 @@ export default function EditProjectPage({ params }: PageProps<"/projects/[slug]/
 }
 
 async function EditProjectForm({ params }: { params: Promise<{ slug: string }> }) {
-  await requireRole("editor");
+  const user = await requireRole("editor");
   const slug = slugSchema.safeParse((await params).slug);
   if (!slug.success) notFound();
 
@@ -57,6 +59,7 @@ async function EditProjectForm({ params }: { params: Promise<{ slug: string }> }
         people={people.map(({ id, name, roles, active }) => ({ id, name, roles, active }))}
       />
       <VisualsManager slug={project.slug} visuals={gallery} flows={catalog.flows} />
+      {hasRole(user.role, "admin") && <DeleteProject slug={project.slug} name={project.name} />}
     </>
   );
 }
