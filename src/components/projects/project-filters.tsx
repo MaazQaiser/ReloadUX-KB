@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { tagOptions, type TagCatalog } from "@/lib/tag-catalog";
-import { projectSearchHref, type ProjectFilters } from "@/schemas/project-filters";
+import { hasActiveFilters, projectSearchHref, type ProjectFilters } from "@/schemas/project-filters";
 import type { GridFilterOptions } from "@/server/services/projects";
 
 /** Long enough to finish a word, short enough to feel live. */
@@ -72,7 +72,7 @@ export function ProjectFiltersBar({
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreCount = MORE.filter((key) => filters[key] !== undefined).length;
-  const active = Object.values(filters).some((value) => value !== undefined);
+  const active = hasActiveFilters(filters) || filters.sort !== undefined;
   // Remounts the dropdowns after each navigation so they show what the URL says.
   const fieldsKey = JSON.stringify(filters);
   // Search is controlled instead, so a live search can't remount it mid-word;
@@ -197,7 +197,7 @@ export function ProjectFiltersBar({
                 <Button type="button">Show results</Button>
               </SheetClose>
               {active && (
-                <Link href="/projects" onClick={() => setMoreOpen(false)} className="text-sm text-soft-foreground underline-offset-4 hover:underline">
+                <Link href={projectSearchHref({ view: filters.view })} onClick={() => setMoreOpen(false)} className="text-sm text-soft-foreground underline-offset-4 hover:underline">
                   Clear all
                 </Link>
               )}

@@ -3,6 +3,11 @@ import { idSchema } from "./common";
 import { aiFeatureSchema, flowSchema, industrySchema, productTypeSchema } from "./tags";
 
 export const PROJECT_SORTS = ["newest", "least_complete"] as const;
+export const PROJECT_VIEWS = ["grid", "list"] as const;
+export type ProjectView = (typeof PROJECT_VIEWS)[number];
+
+/** Keys that change how results are shown, not which projects match. */
+const PRESENTATION_KEYS = new Set(["sort", "view"]);
 
 /**
  * Filters for the Projects grid. Values arrive as URL search params, so
@@ -21,6 +26,8 @@ export const projectFiltersSchema = z.object({
   year: z.coerce.number().int().min(2000).max(2100).optional(),
   /** Kept with the filters so it survives in the URL like them; unset means newest delivery first. */
   sort: z.enum(PROJECT_SORTS).optional(),
+  /** Grid or list layout, kept in the URL for the same reason as sort; unset means grid. */
+  view: z.enum(PROJECT_VIEWS).optional(),
 });
 
 export const paginationSchema = z.object({
@@ -80,4 +87,9 @@ export function projectSearchHref(filters: ProjectFilters, page = 1): string {
   if (page > 1) params.set("page", String(page));
   const query = params.toString();
   return query ? `/projects?${query}` : "/projects";
+}
+
+/** True when something narrows the results; sort and view only change how they're shown. */
+export function hasActiveFilters(filters: ProjectFilters): boolean {
+  return Object.entries(filters).some(([key, value]) => value !== undefined && !PRESENTATION_KEYS.has(key));
 }

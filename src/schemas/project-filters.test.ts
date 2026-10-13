@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { paginationSchema, parseProjectSearch, projectFiltersSchema, projectSearchHref } from "./project-filters";
+import { hasActiveFilters, paginationSchema, parseProjectSearch, projectFiltersSchema, projectSearchHref } from "./project-filters";
 
 describe("projectFiltersSchema", () => {
   it("accepts URL-style strings and coerces the year", () => {
@@ -56,6 +56,19 @@ describe("parseProjectSearch", () => {
 
   it("does not let the URL set the page size", () => {
     expect(parseProjectSearch({ page_size: "100" }).pagination.page_size).toBe(24);
+  });
+
+  it("reads the list view and ignores an unknown one", () => {
+    expect(parseProjectSearch({ view: "list" }).filters).toEqual({ view: "list" });
+    expect(parseProjectSearch({ view: "table" })).toMatchObject({ filters: {}, ignored: ["view"] });
+  });
+});
+
+describe("hasActiveFilters", () => {
+  it("counts filters that narrow results but not sort or view", () => {
+    expect(hasActiveFilters({})).toBe(false);
+    expect(hasActiveFilters({ sort: "least_complete", view: "list" })).toBe(false);
+    expect(hasActiveFilters({ industry: "fintech", view: "list" })).toBe(true);
   });
 });
 

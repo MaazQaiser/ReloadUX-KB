@@ -5,6 +5,7 @@ import { PROJECT_STATUS } from "@/lib/constants";
 import { tagLabel, type TagCatalog } from "@/lib/tag-catalog";
 import { formatYear } from "@/lib/format";
 import type { ProjectGridItem } from "@/server/services/projects";
+import { CompletenessBar } from "./completeness-bar";
 
 /** A tile in the hairline grid, like the work grid on reloadux.com. */
 export function ProjectCard({ item: { project, leadDesigner, completeness }, catalog }: { item: ProjectGridItem; catalog: TagCatalog }) {
@@ -45,19 +46,7 @@ export function ProjectCard({ item: { project, leadDesigner, completeness }, cat
         <p>
           Lead <span className="text-foreground">{leadDesigner?.name ?? "not recorded"}</span>
         </p>
-        <div className="flex items-center gap-2">
-          <div
-            role="meter"
-            aria-label="Record completeness"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={completeness.score}
-            className="h-1 w-12 overflow-hidden bg-muted"
-          >
-            <div className="h-full bg-linear-to-r from-rx-purple to-rx-lilac" style={{ width: `${completeness.score}%` }} />
-          </div>
-          <span className="tabular-nums">{completeness.score}%</span>
-        </div>
+        <CompletenessBar completeness={completeness} />
       </div>
     </article>
   );

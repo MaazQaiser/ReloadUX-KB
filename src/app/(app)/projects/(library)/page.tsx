@@ -4,10 +4,12 @@ import { Suspense } from "react";
 import { Pagination } from "@/components/projects/pagination";
 import { ProjectCard } from "@/components/projects/project-card";
 import { ProjectFiltersBar } from "@/components/projects/project-filters";
+import { ProjectList } from "@/components/projects/project-list";
 import { ProjectsSkeleton } from "@/components/projects/projects-skeleton";
+import { ViewToggle } from "@/components/projects/view-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { hasRole } from "@/lib/auth-rules";
-import { parseProjectSearch, type RawSearchParams } from "@/schemas/project-filters";
+import { hasActiveFilters, parseProjectSearch, projectSearchHref, type RawSearchParams } from "@/schemas/project-filters";
 import { requireRole } from "@/server/auth";
 import { getGridFilterOptions, listProjectsForGrid } from "@/server/services/projects";
 import { getTagCatalog } from "@/server/services/tags";
@@ -30,8 +32,9 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
     getGridFilterOptions(),
     getTagCatalog(),
   ]);
-  // Sort changes the order, not which projects match, so it doesn't count as a filter.
-  const hasFilters = Object.entries(filters).some(([key, value]) => value !== undefined && key !== "sort");
+  const hasFilters = hasActiveFilters(filters);
+  // Clearing filters keeps the layout the person picked.
+  const clearHref = projectSearchHref({ view: filters.view });
 
   return (
     <>
@@ -43,16 +46,19 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
         </p>
       )}
 
-      <div className="flex items-baseline justify-between gap-4 border-b pb-4">
+      <div className="flex items-center justify-between gap-4 border-b pb-4">
         <p role="status" className="text-xs tracking-[0.08em] text-muted-foreground uppercase">
           {page.total === 1 ? "1 project" : `${page.total} projects`}
           {hasFilters && " match these filters"}
         </p>
-        {hasFilters && (
-          <Link href="/projects" className="text-sm text-soft-foreground underline-offset-4 hover:underline">
-            Clear all
-          </Link>
-        )}
+        <div className="flex items-center gap-5">
+          {hasFilters && (
+            <Link href={clearHref} className="text-sm text-soft-foreground underline-offset-4 hover:underline">
+              Clear all
+            </Link>
+          )}
+          <ViewToggle filters={filters} page={page.page} />
+        </div>
       </div>
 
       {page.items.length === 0 ? (
@@ -62,11 +68,13 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
             {hasFilters ? "Nothing matches these filters. Try removing one." : "No approved projects have been added yet."}
           </p>
           {hasFilters && (
-            <Link href="/projects" className={buttonVariants({ variant: "outline" })}>
+            <Link href={clearHref} className={buttonVariants({ variant: "outline" })}>
               Clear filters
             </Link>
           )}
         </div>
+      ) : filters.view === "list" ? (
+        <ProjectList items={page.items} catalog={catalog} />
       ) : (
         // Hairlines drawn per tile (right and bottom edges), so a short last row leaves no grey block.
         <ul className="grid border-t border-l sm:grid-cols-2 lg:grid-cols-3">
