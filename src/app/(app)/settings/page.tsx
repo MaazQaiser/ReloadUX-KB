@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getIntegrations } from "@/env";
 import { requireRole } from "@/server/auth";
 import { getLibraryHealth } from "@/server/services/analytics";
+import { getAskAnalytics } from "@/server/services/learning";
 import { listUsersForSettings } from "@/server/services/users";
 
 export const metadata: Metadata = { title: "settings" };
@@ -33,12 +34,12 @@ export default function SettingsPage() {
 
 async function SettingsView() {
   const admin = await requireRole("admin");
-  const [users, health] = await Promise.all([listUsersForSettings(), getLibraryHealth()]);
+  const [users, health, ask] = await Promise.all([listUsersForSettings(), getLibraryHealth(), getAskAnalytics()]);
   return (
     <div className="flex flex-col gap-12">
       <UsersSection users={users} currentUserId={admin.id} />
       <IntegrationsSection integrations={getIntegrations()} />
-      <LibraryHealthSection health={health} />
+      <LibraryHealthSection health={health} ask={ask} />
       <TagListsSection />
       <EvalSection />
     </div>

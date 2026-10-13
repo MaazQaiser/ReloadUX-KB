@@ -9,7 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getCompleteness } from "@/lib/completeness";
 import { INDUSTRY } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
+import { GapItem } from "@/components/review/gap-item";
+import { VerifiedAnswerForm } from "@/components/review/verified-answer-form";
+import { VerifiedAnswerItem } from "@/components/review/verified-answer-item";
 import { requireRole } from "@/server/auth";
+import { listOpenGaps, listVerifiedAnswers } from "@/server/services/learning";
+import { listProjectOptions } from "@/server/services/projects";
 import { listDrafts } from "@/server/services/review";
 
 export const metadata: Metadata = { title: "review" };
@@ -31,7 +36,12 @@ export default function ReviewPage() {
 
 async function ReviewView() {
   await requireRole("admin");
-  const drafts = await listDrafts();
+  const [drafts, gaps, answers, projects] = await Promise.all([
+    listDrafts(),
+    listOpenGaps(),
+    listVerifiedAnswers(),
+    listProjectOptions(),
+  ]);
 
   return (
     <div className="flex flex-col gap-12">
@@ -66,25 +76,57 @@ async function ReviewView() {
         )}
       </DetailSection>
 
-      <DetailSection title="Knowledge gaps (0)">
+      <DetailSection title={`Knowledge gaps (${gaps.length})`}>
+        {gaps.length === 0 ? (
+          <p className="text-sm text-soft-foreground">
+            Nothing open. Questions land here when someone gives a real answer a thumbs down; once the agent is
+            connected, also when it answers No with low confidence, a field isn&apos;t recorded, or the same question is
+            asked again within a minute. Resolve each by fixing a record, adding a project or tag, or writing a verified
+            answer below.
+          </p>
+        ) : (
+          <ul className="flex flex-col border-t">
+            {gaps.map((gap) => (
+              <GapItem
+                key={gap.id}
+                gap={{ id: gap.id, question: gap.question, reason: gap.reason, note: gap.note, asked: formatDate(gap.created_at) }}
+              />
+            ))}
+          </ul>
+        )}
+      </DetailSection>
+
+      <DetailSection title={`Verified answers (${answers.length})`}>
         <p className="text-sm text-soft-foreground">
-          Questions the agent couldn&apos;t answer well, grouped by theme each week: a low-confidence No, a field that
-          isn&apos;t recorded, a thumbs down, or the same question asked again within a minute. Resolve each by fixing a
-          record, adding a project or tag, or writing a verified answer. This fills up once the Ask agent is connected.
+          Approved answers the agent starts from when a new question is very similar. It still checks the linked
+          projects are current before answering.
         </p>
+        <div className="border border-dashed p-6">
+          <VerifiedAnswerForm projects={projects} />
+        </div>
+        {answers.length > 0 && (
+          <ul className="flex flex-col border-t">
+            {answers.map((answer) => (
+              <VerifiedAnswerItem
+                key={answer.id}
+                projects={projects}
+                answer={{
+                  id: answer.id,
+                  question: answer.question,
+                  answer: answer.answer,
+                  project_slugs: answer.project_slugs,
+                  updated: formatDate(answer.updated_at),
+                }}
+              />
+            ))}
+          </ul>
+        )}
       </DetailSection>
 
       <DetailSection title="Tag suggestions (0)">
         <p className="text-sm text-soft-foreground">
           A weekly job reads new projects and proposes missing tags, such as an onboarding flow with no onboarding tag.
           Accept or reject each one here. It runs once the Anthropic key is connected.
-        </p>
-      </DetailSection>
-
-      <DetailSection title="Verified answers (0)">
-        <p className="text-sm text-soft-foreground">
-          Approved question-and-answer pairs the agent starts from when a new question is very similar. They&apos;re
-          written while resolving knowledge gaps.
         </p>
       </DetailSection>
     </div>

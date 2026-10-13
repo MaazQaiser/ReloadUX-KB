@@ -3,6 +3,8 @@ import type { AnswerFeedback, AskEvent } from "@/schemas/answer";
 import type { User } from "@/schemas/user";
 import { PREVIEW_ANSWERS, PREVIEW_FALLBACK } from "@/server/fixtures/answers";
 import { logger } from "@/server/logger";
+import { insertConversation, setConversationFeedback } from "@/server/repositories/conversations";
+import { insertGap } from "@/server/repositories/knowledge-gaps";
 
 const log = logger.child({ module: "ask" });
 
@@ -36,6 +38,7 @@ export async function* streamAnswer(
   { delayMs = PREVIEW_DELAY_MS, signal }: StreamOptions = {},
 ): AsyncGenerator<AskEvent> {
   const turnId = crypto.randomUUID();
+  const startedAt = Date.now();
   log.info("ask turn started", { turnId, userId: user.id, preview: true });
 
   yield { type: "status", label: "Searching projects" };
@@ -49,10 +52,32 @@ export async function* streamAnswer(
     yield { type: "text", delta };
     await pause(delayMs);
   }
+  // Logged before "done" so feedback on this turn always finds it.
+  await insertConversation({
+    turn_id: turnId,
+    user_id: user.id,
+    question,
+    verdict: answer.verdict,
+    project_slugs: answer.projects.map((project) => project.slug),
+    tools_called: [],
+    latency_ms: Date.now() - startedAt,
+    preview: true,
+    created_at: new Date(startedAt),
+  });
   yield { type: "done", turn_id: turnId, preview: true };
 }
 
-/** Thumbs up/down on an answer. Stored on the conversation once `conversations` exists (phase 3). */
-export async function recordAnswerFeedback(feedback: AnswerFeedback, user: User): Promise<void> {
-  log.info("answer feedback", { turnId: feedback.turn_id, userId: user.id, rating: feedback.rating, hasNote: Boolean(feedback.note) });
+/**
+ * Thumbs up/down on the asker's own answer. A thumbs down on a real (not
+ * preview) answer becomes a knowledge gap for the review queue.
+ * Returns false when the turn isn't theirs or doesn't exist.
+ */
+export async function recordAnswerFeedback(feedback: AnswerFeedback, user: User): Promise<boolean> {
+  const turn = await setConversationFeedback(feedback.turn_id, user.id, { rating: feedback.rating, note: feedback.note });
+  log.info("answer feedback", { turnId: feedback.turn_id, userId: user.id, rating: feedback.rating, found: Boolean(turn) });
+  if (!turn) return false;
+  if (feedback.rating === "down" && !turn.preview) {
+    await insertGap({ question: turn.question, reason: "thumbs_down", note: feedback.note, turn_id: turn.turn_id, user_id: user.id });
+  }
+  return true;
 }

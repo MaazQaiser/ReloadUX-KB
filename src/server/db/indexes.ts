@@ -16,6 +16,11 @@ export const INDEXES: readonly IndexDefinition[] = [
   { collection: COLLECTIONS.people, index: { name: "slug_unique", key: { slug: 1 }, unique: true } },
   { collection: COLLECTIONS.users, index: { name: "email_unique", key: { email: 1 }, unique: true } },
   { collection: COLLECTIONS.users, index: { name: "firebase_uid_unique", key: { firebase_uid: 1 }, unique: true } },
+  { collection: COLLECTIONS.conversations, index: { name: "turn_id_unique", key: { turn_id: 1 }, unique: true } },
+  { collection: COLLECTIONS.conversations, index: { name: "created_at", key: { created_at: -1 } } },
+  { collection: COLLECTIONS.knowledgeGaps, index: { name: "status_created", key: { status: 1, created_at: -1 } } },
+  { collection: COLLECTIONS.visuals, index: { name: "project_order", key: { project_id: 1, order: 1 } } },
+  { collection: COLLECTIONS.tagValues, index: { name: "list_key_unique", key: { list: 1, key: 1 }, unique: true } },
 ];
 
 export type IndexAction = "create" | "unchanged" | "conflict";

@@ -5,6 +5,11 @@ export const COLLECTIONS = {
   projects: "projects",
   people: "people",
   users: "users",
+  conversations: "conversations",
+  knowledgeGaps: "knowledge_gaps",
+  verifiedAnswers: "verified_answers",
+  visuals: "visuals",
+  tagValues: "tag_values",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

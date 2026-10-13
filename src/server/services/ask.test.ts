@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { askEventSchema, type AskEvent } from "@/schemas/answer";
 import type { User } from "@/schemas/user";
-import { streamAnswer, toDeltas } from "./ask";
+import * as conversations from "@/server/repositories/conversations";
+import * as gaps from "@/server/repositories/knowledge-gaps";
+import { recordAnswerFeedback, streamAnswer, toDeltas } from "./ask";
+
+vi.mock("@/server/repositories/conversations");
+vi.mock("@/server/repositories/knowledge-gaps");
 
 vi.mock("@/server/logger", () => {
   const log = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), child: () => log };
@@ -53,5 +58,62 @@ describe("streamAnswer (preview)", () => {
     controller.abort();
     const events = await collect("have we done a healthcare chatbot?", controller.signal);
     expect(events.some((event) => event.type === "text" || event.type === "done")).toBe(false);
+  });
+});
+
+describe("logging", () => {
+  it("logs each finished turn as a preview conversation", async () => {
+    vi.mocked(conversations.insertConversation).mockClear();
+    const events = await collect("Have we done a healthcare chatbot?");
+    const done = events.at(-1);
+
+    expect(conversations.insertConversation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        turn_id: done?.type === "done" ? done.turn_id : "",
+        user_id: user.id,
+        question: "Have we done a healthcare chatbot?",
+        preview: true,
+      }),
+    );
+  });
+});
+
+describe("recordAnswerFeedback", () => {
+  const turn = {
+    id: "64b7f0c2a1b2c3d4e5f60720",
+    turn_id: "0b6f1c1e-5c47-4b5e-9a39-1d3c8f2a9b10",
+    user_id: user.id,
+    question: "Have we built a VR game?",
+    verdict: "no" as const,
+    project_slugs: [],
+    tools_called: [],
+    latency_ms: 10,
+    preview: false,
+    created_at: new Date(),
+  };
+
+  it("refuses a turn that isn't the user's", async () => {
+    vi.mocked(conversations.setConversationFeedback).mockResolvedValue(null);
+    expect(await recordAnswerFeedback({ turn_id: turn.turn_id, rating: "up" }, user)).toBe(false);
+  });
+
+  it("turns a thumbs down on a real answer into a knowledge gap", async () => {
+    vi.mocked(gaps.insertGap).mockClear();
+    vi.mocked(conversations.setConversationFeedback).mockResolvedValue(turn);
+
+    expect(await recordAnswerFeedback({ turn_id: turn.turn_id, rating: "down", note: "Missed Questline" }, user)).toBe(true);
+    expect(gaps.insertGap).toHaveBeenCalledWith(
+      expect.objectContaining({ question: turn.question, reason: "thumbs_down", note: "Missed Questline" }),
+    );
+  });
+
+  it("doesn't open gaps from preview answers or thumbs up", async () => {
+    vi.mocked(gaps.insertGap).mockClear();
+    vi.mocked(conversations.setConversationFeedback).mockResolvedValue({ ...turn, preview: true });
+    await recordAnswerFeedback({ turn_id: turn.turn_id, rating: "down" }, user);
+    vi.mocked(conversations.setConversationFeedback).mockResolvedValue(turn);
+    await recordAnswerFeedback({ turn_id: turn.turn_id, rating: "up" }, user);
+
+    expect(gaps.insertGap).not.toHaveBeenCalled();
   });
 });

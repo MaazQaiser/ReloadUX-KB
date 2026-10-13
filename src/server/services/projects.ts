@@ -11,6 +11,7 @@ import { findPeopleByIds, listPeople } from "@/server/repositories/people";
 import {
   findProjectBySlug,
   insertProject,
+  listAllVisibleProjects,
   listDeliveryYears,
   listProjects,
   updateProjectById,
@@ -153,4 +154,11 @@ export interface GridFilterOptions {
 export async function getGridFilterOptions(): Promise<GridFilterOptions> {
   const [designers, years] = await Promise.all([listPeople({ role: "designer" }), listDeliveryYears()]);
   return { designers, years };
+}
+
+/** Name and slug of every live project, for pickers such as verified answers. */
+export async function listProjectOptions(): Promise<{ slug: string; name: string }[]> {
+  return (await listAllVisibleProjects())
+    .map(({ slug, name }) => ({ slug, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }

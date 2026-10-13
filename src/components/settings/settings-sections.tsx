@@ -5,6 +5,7 @@ import type { Integrations } from "@/env";
 import { AI_FEATURE, FLOW, INDUSTRY, PRODUCT_TYPE, PROJECT_STATUS, SERVICE, type TagList } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import type { User } from "@/schemas/user";
+import type { AskStats } from "@/server/repositories/conversations";
 import type { LibraryHealth } from "@/server/services/analytics";
 import { ApproveForm } from "./approve-form";
 import { RoleForm } from "./role-form";
@@ -78,14 +79,18 @@ export function IntegrationsSection({ integrations }: { integrations: Integratio
   );
 }
 
-export function LibraryHealthSection({ health }: { health: LibraryHealth }) {
+export function LibraryHealthSection({ health, ask }: { health: LibraryHealth; ask: AskStats }) {
+  const thisWeek = ask.weekly.at(-1)?.count ?? 0;
+  const peak = Math.max(1, ...ask.weekly.map((week) => week.count));
+  const thumbsRate = ask.ratedAnswers > 0 ? `${Math.round((ask.thumbsUp / ask.ratedAnswers) * 100)}%` : "—";
   return (
     <DetailSection title="Analytics">
-      <dl className="grid border-t border-l sm:grid-cols-3">
+      <dl className="grid border-t border-l sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["Projects", String(health.projectCount)],
           ["Average completeness", `${health.averageScore}%`],
-          ["Questions this week", "—"],
+          ["Questions, last 8 weeks", String(ask.totalQuestions)],
+          ["Thumbs-up rate", thumbsRate],
         ].map(([label, value]) => (
           <div key={label} className="flex flex-col gap-1 border-r border-b p-5">
             <dt className="text-sm text-muted-foreground">{label}</dt>
@@ -93,9 +98,27 @@ export function LibraryHealthSection({ health }: { health: LibraryHealth }) {
           </div>
         ))}
       </dl>
+      {ask.weekly.length > 0 ? (
+        <figure className="flex flex-col gap-2">
+          <figcaption className="text-sm text-muted-foreground">Questions per week ({thisWeek} this week)</figcaption>
+          <ol className="flex h-32 items-end gap-2 border-b">
+            {ask.weekly.map((week) => (
+              <li key={week.week.toISOString()} className="flex flex-1 flex-col items-center gap-1">
+                <span className="text-xs text-soft-foreground">{week.count}</span>
+                <span className="w-full bg-foreground" style={{ height: `${(week.count / peak) * 96}px` }} aria-hidden />
+                <span className="sr-only">
+                  Week of {formatDate(week.week)}: {week.count} questions
+                </span>
+              </li>
+            ))}
+          </ol>
+        </figure>
+      ) : (
+        <p className="text-sm text-muted-foreground">No questions asked yet.</p>
+      )}
       <p className="text-sm text-muted-foreground">
-        Questions per week, thumbs-up rate and top unanswered topics appear once the Ask agent is connected and
-        logging conversations.
+        The thumbs-up rate counts real agent answers only, not preview answers. Top unanswered topics are in the review
+        queue.
       </p>
       <h3 className="mt-2 text-lg">Least complete projects</h3>
       {health.leastComplete.length === 0 ? (

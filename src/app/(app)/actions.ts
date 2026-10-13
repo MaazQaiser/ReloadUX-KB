@@ -11,6 +11,6 @@ export async function submitAnswerFeedbackAction(raw: unknown): Promise<Feedback
   const feedback = answerFeedbackSchema.safeParse(raw);
   if (!feedback.success) return { ok: false, message: "That feedback couldn't be read. Try again." };
 
-  await recordAnswerFeedback(feedback.data, user);
-  return { ok: true };
+  const saved = await recordAnswerFeedback(feedback.data, user);
+  return saved ? { ok: true } : { ok: false, message: "That answer couldn't be found. Ask again and rate the new one." };
 }
