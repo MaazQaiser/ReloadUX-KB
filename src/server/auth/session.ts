@@ -44,7 +44,12 @@ export async function createSession(
 
   const email = decoded.email.toLowerCase();
   const user = await upsertUserOnSignIn(
-    { firebase_uid: decoded.uid, email, name: typeof decoded.name === "string" && decoded.name ? decoded.name : email },
+    {
+      firebase_uid: decoded.uid,
+      email,
+      name: typeof decoded.name === "string" && decoded.name ? decoded.name : email,
+      photo_url: typeof decoded.picture === "string" ? decoded.picture : undefined,
+    },
     { promoteToAdmin: config.initialAdminEmails.includes(email) },
   );
   const cookie = await auth.createSessionCookie(idToken, { expiresIn: SESSION_MAX_AGE_SECONDS * 1000 });

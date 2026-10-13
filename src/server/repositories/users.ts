@@ -13,6 +13,8 @@ const signInSchema = z.object({
   firebase_uid: z.string().min(1).max(128),
   email: z.email().toLowerCase(),
   name: z.string().trim().min(1).max(200),
+  // Google's photo URL; dropped if it isn't a plain https link rather than failing the sign-in.
+  photo_url: z.url({ protocol: /^https$/ }).optional().catch(undefined),
 });
 
 async function users() {
@@ -36,6 +38,7 @@ export async function upsertUserOnSignIn(
   const saved = await (await users()).findOneAndUpdate(
     { email: identity.email },
     {
+      ...(!identity.photo_url && { $unset: { photo_url: "" } }),
       $set: {
         ...identity,
         last_sign_in_at: now,
@@ -68,6 +71,18 @@ export async function updateUserRole(id: string, role: UserRole, actor: Actor): 
   const saved = await (await users()).findOneAndUpdate(
     { _id: toObjectId(id) },
     { $set: { role: userRoleSchema.parse(role), updated_by: actorSchema.parse(actor), updated_at: new Date() } },
+    { returnDocument: "after" },
+  );
+  return saved ? fromDocument(userSchema, COLLECTIONS.users, saved) : null;
+}
+
+/** Updates what a person can change about themselves; null if they no longer exist. */
+export async function updateOwnProfile(id: string, { designation }: { designation?: string }): Promise<User | null> {
+  const saved = await (await users()).findOneAndUpdate(
+    { _id: toObjectId(id) },
+    designation
+      ? { $set: { designation, updated_by: id, updated_at: new Date() } }
+      : { $unset: { designation: "" }, $set: { updated_by: id, updated_at: new Date() } },
     { returnDocument: "after" },
   );
   return saved ? fromDocument(userSchema, COLLECTIONS.users, saved) : null;
