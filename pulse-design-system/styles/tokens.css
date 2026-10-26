@@ -1,0 +1,324 @@
+/* ==========================================================================
+   ReloadUX · Pulse — design tokens
+   --------------------------------------------------------------------------
+   Every value here is lifted from the shipping app (app/globals.css, the
+   Tailwind v4 defaults it relies on, lib/motion.ts, and the components).
+   Framework-agnostic: plain CSS custom properties.
+
+   Namespaced so it can live inside another project: every variable is
+   --pulse-*, every class is .rx-*. Nothing here styles html, body or bare
+   elements; that lives in base.css and only applies inside .pulse.
+   (The app itself uses unprefixed names: --ink here is --pulse-ink.)
+
+   Theme switching: class-based, like the app (next-themes, attribute="class").
+     <html class="dark">            → dark
+     <html data-theme="dark">       → dark (alias, for non-next-themes setups)
+     no class                        → light
+   The app's default is "system": add/remove `.dark` from
+   prefers-color-scheme on first load, then let a toggle override it.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Fonts — self-hosted, latin subset (identical files to @fontsource)
+   Manrope 300/400/500/700 (UI), Libre Baskerville 400/700 + italics (display)
+   -------------------------------------------------------------------------- */
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 300; font-display: swap; src: url("../assets/fonts/woff2/manrope-latin-300-normal.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/woff2/manrope-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 500; font-display: swap; src: url("../assets/fonts/woff2/manrope-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 700; font-display: swap; src: url("../assets/fonts/woff2/manrope-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Libre Baskerville"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/woff2/libre-baskerville-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Libre Baskerville"; font-style: italic; font-weight: 400; font-display: swap; src: url("../assets/fonts/woff2/libre-baskerville-latin-400-italic.woff2") format("woff2"); }
+@font-face { font-family: "Libre Baskerville"; font-style: normal; font-weight: 700; font-display: swap; src: url("../assets/fonts/woff2/libre-baskerville-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Libre Baskerville"; font-style: italic; font-weight: 700; font-display: swap; src: url("../assets/fonts/woff2/libre-baskerville-latin-700-italic.woff2") format("woff2"); }
+
+/* --------------------------------------------------------------------------
+   2. Theme-independent tokens
+   -------------------------------------------------------------------------- */
+:root {
+  /* Families */
+  --pulse-font-sans: "Manrope", system-ui, sans-serif;
+  --pulse-font-serif: "Libre Baskerville", Georgia, serif;
+  --pulse-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Weights actually used */
+  --pulse-weight-light: 300;   /* loaded, rarely used */
+  --pulse-weight-regular: 400; /* body, logo "reload" */
+  --pulse-weight-medium: 500;  /* labels, active nav, card titles */
+  --pulse-weight-bold: 700;    /* logo "ux", report keys, chips, buttons in report */
+
+  /* Type scale — Tailwind v4 defaults the app uses (size / line-height) */
+  --pulse-text-2xs: 10px;   --pulse-leading-2xs: 1.4;           /* "recommended" tag, flow-step badges, score keys */
+  --pulse-text-xs: 12px;    --pulse-leading-xs: 16px;           /* captions, hints, eyebrows (app) */
+  --pulse-text-sm: 14px;    --pulse-leading-sm: 20px;           /* default UI text, buttons, composer */
+  --pulse-text-base: 16px;  --pulse-leading-base: 24px;         /* chat messages, landing input (mobile) */
+  --pulse-text-lg: 18px;    --pulse-leading-lg: 28px;           /* landing input (≥640px), header logo */
+  --pulse-text-xl: 20px;    --pulse-leading-xl: 28px;           /* landing logo, card display titles */
+  --pulse-text-2xl: 24px;   --pulse-leading-2xl: 32px;          /* report h3, small score numerals */
+  --pulse-text-3xl: 30px;   --pulse-leading-3xl: 36px;          /* landing hero (mobile) */
+  --pulse-text-4xl: 36px;   --pulse-leading-4xl: 40px;          /* landing hero (≥640px), report title (mobile) */
+  --pulse-text-5xl: 48px;   --pulse-leading-5xl: 1;             /* landing hero (≥768px), report title (≥640px) */
+
+  /* Line-height keywords */
+  --pulse-leading-tight: 1.25;     /* hero */
+  --pulse-leading-snug: 1.375;     /* card descriptions */
+  --pulse-leading-relaxed: 1.625;  /* chat messages, bubbles */
+
+  /* Tracking */
+  --pulse-tracking-tight: -0.025em;  /* logo */
+  --pulse-tracking-wide: 0.025em;    /* small uppercase labels ("CHAPTERS") */
+  --pulse-tracking-display: -0.02em; /* report serif headings */
+
+  /* Report type scale — denser, px-exact (from the Pulse report layout) */
+  --pulse-report-title: 48px;          /* h1, leading 1.02 (36px below 640px) */
+  --pulse-report-h2: 34px;             /* section + topic headings, leading 1.1 / 1.08 */
+  --pulse-report-h3: 24px;             /* "Content Quality", "AI SEO" */
+  --pulse-report-stat: 46px;           /* StatRow numerals, leading 1 */
+  --pulse-report-score-lead: 40px;     /* ScoreGrid lead cell */
+  --pulse-report-score: 24px;          /* ScoreGrid lens cells */
+  --pulse-report-finding-title: 15px;
+  --pulse-report-body: 14px;           /* p.body, leading 1.65 */
+  --pulse-report-cell: 13px;           /* table cells, callouts, leading 1.5 / 1.6 */
+  --pulse-report-finding: 12.5px;      /* finding text, leading 1.55 */
+  --pulse-report-stat-label: 11.5px;
+  --pulse-report-eyebrow: 11px;        /* tracking 0.16em (0.12em in callouts) */
+  --pulse-report-th: 10px;             /* tracking 0.1em */
+  --pulse-report-chip: 9.5px;          /* tracking 0.08em */
+
+  /* Radius — pill buttons, soft cards (lifted from reloadux.com) */
+  --pulse-radius-sm: 2px;      /* evidence highlight box */
+  --pulse-radius-md: 6px;      /* checkboxes; the user bubble's "tail" corner */
+  --pulse-radius-lg: 8px;      /* thumbnails, file previews */
+  --pulse-radius-xl: 12px;     /* chapter nav items, evidence crops */
+  --pulse-radius-2xl: 16px;    /* user bubble, fields, cards, flow lists */
+  --pulse-radius-3xl: 24px;    /* landing input, composer, side cards, answered-question card */
+  --pulse-radius-full: 9999px; /* every button, chip, avatar, toggle */
+  --pulse-radius-none: 0;      /* the report document + its tables/callouts: square on purpose */
+
+  /* Shadows — reloadux.com's ambient header/dropdown shadow */
+  --pulse-shadow-soft: 0px 4px 28px rgba(0, 0, 0, 0.06);
+  --pulse-shadow-soft-lg: 0px 8px 40px rgba(0, 0, 0, 0.08);
+  --pulse-shadow-focus-ring: 0 0 0 4px color-mix(in srgb, var(--pulse-ink) 5%, transparent); /* focus:ring-4 ring-ink/5 */
+  --pulse-shadow-evidence-mask: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+
+  /* Blur */
+  --pulse-blur-sm: 4px;   /* lightbox backdrop */
+  --pulse-blur-md: 12px;  /* sticky header */
+  --pulse-blur-xl: 24px;  /* chat composer shell */
+
+  /* Layout */
+  --pulse-container-landing: 1152px;      /* max-w-6xl, landing header + hero */
+  --pulse-container-hero: 672px;         /* max-w-2xl, hero text column */
+  --pulse-container-thread: 960px;       /* max-w-[960px], audit thread before the report */
+  --pulse-container-thread-report: 1440px;/* max-w-[1440px], once the report (and side rails) exist */
+  --pulse-column-thread: 840px;        /* 840px — every bubble, stage and the report */
+  --pulse-column-user-bubble: 720px;     /* 720px — user bubble max width */
+  --pulse-column-composer: 705.6px;      /* 705.6px — composer max width */
+  --pulse-rail-width: 224px;             /* side rails column (nav card itself is 224px/w-56; promo card w-72) */
+  --pulse-gutter: 24px;                  /* px-6 page gutter, everywhere */
+  --pulse-header-offset: 96px;           /* sticky rails top-24 / scroll-mt-24 */
+  --pulse-avatar-size: 32px;             /* h-8 w-8 */
+  --pulse-avatar-indent: 44px;           /* ml-11 = avatar 32 + gap 12: aligns attachments with message text */
+
+  /* Motion */
+  --pulse-ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1); /* EASE — the system curve */
+  --pulse-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);     /* CSS hover/color transitions (Tailwind default) */
+  --pulse-ease-site: ease-in-out;                        /* reloadux.com's own "all .3s ease-in-out" */
+  --pulse-duration-fast: 150ms;   /* tapOnly */
+  --pulse-duration-quick: 200ms;  /* pressable, chevrons, header step label */
+  --pulse-duration-base: 300ms;   /* every hover/colour transition; fadeIn/scaleIn */
+  --pulse-duration-enter: 350ms;  /* fadeInUp, page/header entrance */
+  --pulse-duration-slow: 500ms;   /* landing hero entrance */
+
+  /* Fixed brand colours (never flip) */
+  --pulse-white: #ffffff;
+  --pulse-black: #000000;
+  --pulse-night: #090909;                 /* reloadux.com --pulse-night; text on white CTA buttons */
+  --pulse-cta-base: #0a0a0f;              /* promo card base */
+  --pulse-violet-900: #6d28d9;      /* "Pulse" wordmark gradient stops */
+  --pulse-violet-500: #8b5cf6;
+  --pulse-violet-200: #c4b5fd;
+  --pulse-promo-glow: rgba(147, 90, 255, 0.55);
+
+  /* Severity scale (PDF/PPTX hexes; the web UI uses the same intent) */
+  --pulse-severity-critical: #dc2626;
+  --pulse-severity-high: #ea580c;
+  --pulse-severity-medium: #f59e0b;
+  --pulse-severity-low: #6b7280;
+  --pulse-severity-suggestion: #0891b2;
+
+  /* Score ring (ScoreCircle) — Tailwind v4 palette */
+  --pulse-score-good: oklch(59.6% 0.145 163.225);  /* emerald-600 ≈ #009966 — ≥ 80 */
+  --pulse-score-ok: oklch(66.6% 0.179 58.318);     /* amber-600  ≈ #e17100 — 50–79 */
+  --pulse-score-bad: oklch(63.7% 0.237 25.331);    /* red-500    ≈ #fb2c36 — < 50 */
+  --pulse-error: oklch(63.7% 0.237 25.331);        /* red-500 — field error text/border */
+  --pulse-evidence-outline: oklch(70.5% 0.213 47.604); /* orange-500 — evidence box */
+}
+
+/* --------------------------------------------------------------------------
+   3. Light theme (default) — strictly monochrome + one violet accent
+   -------------------------------------------------------------------------- */
+:root {
+  --pulse-ink: #090909;       /* primary text; ALSO the solid fill for buttons, user bubble, toggles */
+  --pulse-surface: #ffffff;   /* page + card bg; ALSO text that sits on an ink fill */
+  --pulse-tint: #f0f0f0;      /* subtle fill: hover bg, composer field, answered card, zebra rows */
+  --pulse-hairline: #d9d9d9;  /* every border/divider (reloadux.com --pulse-smokey) */
+  --pulse-muted: #a5a9ac;     /* captions, placeholders, step labels (reloadux.com --pulse-grey) */
+
+  --pulse-accent: #7f56d9;                       /* report structure only: headings, eyebrows, lead stat */
+  --pulse-accent-soft: rgba(127, 86, 217, 0.15); /* "inferred" chip fill */
+  --pulse-accent-faint: rgba(127, 86, 217, 0.08);/* Confidence Signal callout bg */
+
+  /* Report document greys */
+  --pulse-secondary: #565656; /* body text inside the report (readable at 13px) */
+  --pulse-tertiary: #a5a9ac;  /* labels, keys, "/10", captions */
+  --pulse-fill: #f5f5f5;      /* callout + low chip + lead score cell fill */
+  --pulse-rule: #d9d9d9;      /* table row dividers, report frame */
+  --pulse-pass: #1f9d5b;
+  --pulse-warn: #c77700;
+  --pulse-fail: #c0392b;
+
+  /* Landing page backdrop (scoped — does not leak into the thread).
+     The image itself is set in .rx-landing-bg below, not in a variable:
+     a relative url() inside a custom property resolves inconsistently
+     across bundlers. */
+  --pulse-selector-bg-color: var(--pulse-hairline);
+  --pulse-selector-bg-size: cover;
+  --pulse-selector-bg-position: center;
+  --pulse-selector-card-bg: var(--pulse-surface);
+}
+
+/* --------------------------------------------------------------------------
+   4. Dark theme — ink/surface swap; greys re-derived, accent lifted
+   -------------------------------------------------------------------------- */
+.dark,
+[data-theme="dark"] {
+  --pulse-ink: #f2f2f2;
+  --pulse-surface: #0e0e0e;
+  --pulse-tint: #1c1c1e;
+  --pulse-hairline: #2c2c2e;
+  --pulse-muted: #8b8f94;
+
+  --pulse-accent: #9b7ce8;
+  --pulse-accent-soft: rgba(155, 124, 232, 0.22);
+  --pulse-accent-faint: rgba(155, 124, 232, 0.12);
+
+  --pulse-secondary: #b4b8bc;
+  --pulse-tertiary: #8b8f94;
+  --pulse-fill: #17171a;
+  --pulse-rule: #2c2c2e;
+  --pulse-pass: #34d399;
+  --pulse-warn: #fbbf24;
+  --pulse-fail: #f87171;
+
+  --pulse-selector-bg-color: #000000;
+  --pulse-selector-bg-size: min(60vw, 1040px);
+  --pulse-selector-bg-position: bottom right;
+  --pulse-selector-card-bg: #1a1a1d;
+}
+
+/* --------------------------------------------------------------------------
+   4b. Border colours — AS SHIPPED vs AS INTENDED
+   In the live app, globals.css has an unlayered `* { border-color: hairline }`
+   which beats every Tailwind border-colour class. So although the code asks
+   for ink outlines, violet callout rules, darker hover/focus borders, etc.,
+   what actually renders is the hairline grey everywhere (measured in both
+   themes). Default = as shipped, for a pixel match. To get what the
+   designers wrote instead, add data-pulse-borders="intended" to <html> or to
+   any .pulse element.
+   -------------------------------------------------------------------------- */
+:root,
+.dark,
+[data-theme="dark"] {
+  --pulse-border-ink: var(--pulse-hairline);         /* intended: ink — secondary button, active pill, focused field, checked box */
+  --pulse-border-hover: var(--pulse-hairline);       /* intended: ink 40% — every hover border */
+  --pulse-border-drag: var(--pulse-hairline);        /* intended: ink 50% — landing input drag-over */
+  --pulse-border-glass: var(--pulse-hairline);       /* intended: hairline 60% — composer shell */
+  --pulse-border-error: var(--pulse-hairline);       /* intended: red-500 — invalid field */
+  --pulse-border-chip-medium: var(--pulse-hairline); /* intended: secondary grey — "Medium" chip */
+  --pulse-border-accent: var(--pulse-hairline);      /* intended: violet — callout left rule */
+  --pulse-border-on-dark: var(--pulse-hairline);     /* intended: white 15% — unlock-card tiles */
+}
+[data-pulse-borders="intended"],
+[data-pulse-borders="intended"] .dark,
+.dark [data-pulse-borders="intended"],
+[data-pulse-borders="intended"][data-theme="dark"] {
+  --pulse-border-ink: var(--pulse-ink);
+  --pulse-border-hover: color-mix(in oklab, var(--pulse-ink) 40%, transparent);
+  --pulse-border-drag: color-mix(in oklab, var(--pulse-ink) 50%, transparent);
+  --pulse-border-glass: color-mix(in oklab, var(--pulse-hairline) 60%, transparent);
+  --pulse-border-error: var(--pulse-error);
+  --pulse-border-chip-medium: var(--pulse-secondary);
+  --pulse-border-accent: var(--pulse-accent);
+  --pulse-border-on-dark: rgba(255, 255, 255, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   5. Signature utilities (verbatim from the app)
+   Page-level base styles (body, resets) live in base.css, scoped to .pulse.
+   -------------------------------------------------------------------------- */
+
+/* Italic serif — hero lines, card titles, conversational display text. */
+.rx-font-display {
+  font-family: var(--pulse-font-serif);
+  font-style: italic;
+}
+
+/* Upright bold serif — the report document's headings only. */
+.rx-font-report {
+  font-family: var(--pulse-font-serif);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: var(--pulse-tracking-display);
+}
+
+/* Report table header: violet → black, left to right. Stops matter. */
+.rx-table-head {
+  background-image: linear-gradient(90deg, var(--pulse-accent) 0%, #4a3a8f 28%, #1a1430 58%, #000 100%);
+}
+
+/* "Pulse" — animated violet gradient clipped to text. */
+@keyframes rx-gradient-text-move {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.rx-gradient-text {
+  background-image: linear-gradient(90deg, #6d28d9, #8b5cf6, #c4b5fd, #8b5cf6, #6d28d9);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rx-gradient-text-move 4s ease-in-out infinite;
+}
+
+/* Promo / unlock card — a black and a violet radial drifting in opposition. */
+@keyframes rx-gradient-card-move {
+  0%, 100% { background-position: 15% 20%, 85% 80%; }
+  50% { background-position: 85% 80%, 15% 20%; }
+}
+.rx-gradient-card {
+  background-color: #0a0a0f;
+  background-image:
+    radial-gradient(circle 700px, rgba(10, 10, 15, 0.95) 0%, rgba(10, 10, 15, 0.6) 55%, rgba(10, 10, 15, 0) 100%),
+    radial-gradient(circle 700px, rgba(147, 90, 255, 0.55) 0%, rgba(147, 90, 255, 0.25) 55%, rgba(10, 10, 15, 0) 100%);
+  background-repeat: no-repeat, no-repeat;
+  background-size: 220% 220%, 220% 220%;
+  animation: rx-gradient-card-move 6s ease-in-out infinite;
+}
+
+/* Landing page backdrop */
+.rx-landing-bg {
+  background-color: var(--pulse-selector-bg-color);
+  background-image: url("../assets/images/reload-engine-bg-light.png");
+  background-size: var(--pulse-selector-bg-size);
+  background-position: var(--pulse-selector-bg-position);
+  background-repeat: no-repeat;
+}
+:is(.dark, [data-theme="dark"]) .rx-landing-bg,
+.rx-landing-bg:is(.dark, [data-theme="dark"]) {
+  background-image: url("../assets/images/reload-engine-bg-dark.png");
+}
+
+/* Note: the shipping app does NOT disable these for prefers-reduced-motion.
+   For a pixel-identical clone leave it that way; if you want the accessible
+   improvement, add: @media (prefers-reduced-motion: reduce) {
+   .rx-gradient-text, .rx-gradient-card { animation: none; } } */

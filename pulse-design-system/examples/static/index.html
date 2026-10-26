@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse Design System</title>
+  <link rel="stylesheet" href="../../styles/pulse.css">
+  <script>
+    // Same behaviour as next-themes defaultTheme="system": follow the OS until the user picks.
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem("theme"); } catch (e) {}
+      var dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (dark) document.documentElement.classList.add("dark");
+    })();
+  </script>
+  <style>
+    /* Page-only scaffolding for this showcase (not part of the system). */
+    .kit-section { max-width: 1152px; margin: 0 auto; padding: 64px 24px; }
+    .kit-h { font-family: var(--pulse-font-serif); font-style: italic; font-size: 30px; line-height: 1.25; margin: 0 0 8px; }
+    .kit-sub { font-size: 14px; color: var(--pulse-ink-60); margin: 0 0 32px; max-width: 672px; }
+    .kit-label { font-size: 12px; text-transform: uppercase; letter-spacing: var(--pulse-tracking-wide); color: var(--pulse-muted); margin: 32px 0 12px; }
+    .kit-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .kit-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .kit-swatch { border: 1px solid var(--pulse-hairline); border-radius: 16px; overflow: hidden; background: var(--pulse-surface); }
+    .kit-swatch div:first-child { height: 64px; }
+    .kit-swatch p { margin: 0; padding: 10px 12px; font-size: 12px; line-height: 16px; }
+    .kit-swatch span { color: var(--pulse-muted); display: block; }
+    .kit-divider { border: 0; border-top: 1px solid var(--pulse-hairline); margin: 0; }
+    .kit-composer-demo { position: relative; bottom: auto; left: auto; right: auto; padding: 0; justify-content: flex-start; }
+    .kit-landing-frame { min-height: 100vh; }
+    @media (max-width: 767px) { .rx-scoregrid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body class="pulse pulse-page">
+
+<!-- Inline lucide icons (stroke = currentColor) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="pulse-mic-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6d28d9"/><stop offset="25%" stop-color="#8b5cf6"/><stop offset="50%" stop-color="#c4b5fd"/><stop offset="75%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#6d28d9"/>
+    </linearGradient>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+    <symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></symbol>
+  </defs>
+</svg>
+
+<!-- ============================== LANDING ============================== -->
+<main class="rx-landing rx-landing-bg kit-landing-frame">
+  <div class="rx-landing__top rx-enter-fade">
+    <div class="rx-landing__top-row">
+      <span class="rx-logo rx-logo--landing">reload<b>ux</b></span>
+      <a class="rx-landing__link" href="https://reloadux.com">reloadux.com</a>
+    </div>
+  </div>
+  <div class="rx-landing__center">
+    <div class="rx-landing__inner">
+      <div class="rx-landing__col">
+        <h1 class="rx-hero rx-enter-up">
+          Hello, I am <span class="rx-gradient-text">Pulse</span>, I can do quick audit for your
+          <span class="rx-cycling"><span class="rx-cycling__sizer">Website</span><span id="cycle">App</span></span>
+        </h1>
+        <div class="rx-landing-input rx-enter-up" style="animation-delay:.15s">
+          <button class="rx-icon-btn rx-icon-btn--outline-lg" id="landing-attach" aria-label="Attach an image or PDF">
+            <svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-paperclip"/></svg>
+          </button>
+          <input type="text" placeholder="Paste a URL" id="landing-url">
+          <button class="rx-icon-btn rx-icon-btn--send-lg" id="landing-send" disabled aria-label="Start the audit">
+            <svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow-right"/></svg>
+          </button>
+        </div>
+        <p class="rx-landing__note rx-enter-fade" style="animation-delay:.35s">
+          Every audit runs the basic tier: hand over a URL, image, PDF, or flow of screenshots, answer one or two
+          questions, and get a findings report with a recommendation for each issue.
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<button class="rx-theme-toggle rx-theme-toggle--floating" id="theme-toggle" aria-label="Toggle theme">
+  <svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-sun" id="theme-icon"/></svg>
+</button>
+
+<!-- ============================== THREAD ============================== -->
+<header class="rx-header">
+  <div class="rx-header__row">
+    <span class="rx-logo rx-logo--header">reload<b>ux</b></span>
+    <div class="rx-header__right">
+      <div class="rx-header__meta">
+        <div class="rx-header__title">Heuristic Analysis</div>
+        <div class="rx-header__step">Report</div>
+      </div>
+      <button class="rx-theme-toggle rx-theme-toggle--header" aria-label="Toggle theme" onclick="toggleTheme()">
+        <svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-sun" class="theme-icon-use"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="rx-thread rx-thread--report" style="padding-bottom:64px">
+  <div class="rx-thread__grid">
+    <aside class="rx-thread__rail"><div class="rx-thread__rail-sticky">
+      <nav class="rx-chapters" aria-label="Report chapters">
+        <span class="rx-chapters__title">Chapters</span>
+        <ul>
+          <li><button class="is-active">The Summary</button></li>
+          <li><button>Confidence Signal</button></li>
+          <li><button>About reloadux.com</button></li>
+          <li><button>Overall Experience</button></li>
+          <li><button>Findings Inventory</button></li>
+          <li><button>Detailed Findings</button></li>
+          <li><button>What's Working</button></li>
+          <li><button>SEO &amp; GEO Checks</button></li>
+          <li><button>Suggested Fixes</button></li>
+          <li><button>Case Studies</button></li>
+        </ul>
+      </nav>
+    </div></aside>
+
+    <div class="rx-thread__col">
+      <section style="display:flex;flex-direction:column;gap:12px">
+        <div class="rx-msg rx-enter-up">
+          <img class="rx-avatar" src="../../assets/images/avatar-icon.png" alt="ReloadUX">
+          <div class="rx-msg__body">Got it, here's what I'll be working from</div>
+        </div>
+        <div class="rx-preview" style="margin-top:4px">
+          <div class="rx-preview__frame"><img src="../../reference/landing-dark.jpg" alt="Live capture"></div>
+        </div>
+        <p class="rx-preview__caption" style="margin-top:0">
+          From reviewing your URL, you run reloadux, a UI/UX design agency helping B2B and SaaS companies design
+          AI-native product experiences. The site showcases case studies and client testimonials, driving visitors
+          to book a free consultation.
+        </p>
+      </section>
+
+      <div class="rx-user-row rx-enter-up">
+        <div class="rx-answer-card">
+          <div>
+            <p class="rx-answer-card__q">&gt; Is there a specific goal or outcome you'd like this audit to speak to?</p>
+            <p class="rx-answer-card__a">(skipped)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rx-user-row"><div class="rx-user-bubble">Looks right, confirmed.</div></div>
+
+      <div class="rx-msg">
+        <img class="rx-avatar" src="../../assets/images/avatar-icon.png" alt="ReloadUX">
+        <div class="rx-msg__body"><span class="rx-msg__status"><span id="phrase">Squinting at your button hierarchy…</span><span class="rx-dots"><span></span><span></span><span></span></span></span></div>
+      </div>
+
+      <div class="rx-msg">
+        <img class="rx-avatar" src="../../assets/images/avatar-icon.png" alt="ReloadUX">
+        <div class="rx-msg__body"><span class="rx-msg__done"><svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg> Analysis complete.</span></div>
+      </div>
+
+      <!-- Report -->
+      <section class="rx-report rx-enter-up">
+        <header class="rx-report__header">
+          <div style="min-width:0">
+            <span class="rx-eyebrow" style="margin-bottom:12px">Pulse · Heuristic Analysis</span>
+            <h1 class="rx-report__title">reloadux.com</h1>
+          </div>
+          <button class="rx-btn rx-btn--report">
+            <svg class="rx-icon rx-icon--sm" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-download"/></svg>
+            Download PDF
+          </button>
+        </header>
+
+        <div class="rx-section">
+          <h2 class="rx-h-sec">The Summary</h2>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <p class="rx-body">The biggest cost sits in trust: the About Us stats all read as '0.0x' and '+0%', and all three case study cards are empty grey boxes. For a design agency, that's a storefront with <strong>blank signs</strong>.</p>
+            <p class="rx-body">The evidence points first to the missing stats and case study images. Sequencing beyond that is your call.</p>
+          </div>
+        </div>
+
+        <div class="rx-section">
+          <div class="rx-callout rx-callout--signal">
+            <span class="rx-eyebrow">Confidence Signal</span>
+            <div class="rx-callout__text"><strong>Solid</strong> on everything read directly off the page — heading structure, form markup, link and CTA copy. <strong>Thin</strong> on anything behind an interaction.</div>
+          </div>
+        </div>
+
+        <div class="rx-section">
+          <h2 class="rx-h-sec">About reloadux.com</h2>
+          <div class="rx-table-wrap"><table class="rx-table">
+            <thead class="rx-table-head"><tr><th style="width:32%">Dimension</th><th>What we found</th></tr></thead>
+            <tbody>
+              <tr><td class="k">Business</td><td>UI/UX design agency for AI-native SaaS, fintech, and healthcare products.</td></tr>
+              <tr><td class="k">Primary goal</td><td>(skipped)</td></tr>
+              <tr><td class="k">Form flow</td><td><span class="rx-chip rx-chip--soft">Inferred</span> Read from markup; submission states not triggered.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="rx-section">
+          <h2 class="rx-h-topic" style="margin-bottom:8px">Overall Experience</h2>
+          <p class="rx-body" style="margin-bottom:20px">The overall score is a weighted blend of the lenses below.</p>
+          <div class="rx-scoregrid">
+            <div class="rx-score rx-score--lead"><div class="rx-score__value">5.9<span class="rx-score__unit">/10</span></div><div class="rx-score__label">Overall Experience</div></div>
+            <div class="rx-score"><div class="rx-score__value">8.7<span class="rx-score__unit">/10</span></div><div class="rx-score__label">Conversion</div></div>
+            <div class="rx-score"><div class="rx-score__value">7.3<span class="rx-score__unit">/10</span></div><div class="rx-score__label">Accessibility</div></div>
+            <div class="rx-score"><div class="rx-score__value">6.1<span class="rx-score__unit">/10</span></div><div class="rx-score__label">Trust</div></div>
+            <div class="rx-score"><div class="rx-score__value">10.0<span class="rx-score__unit">/10</span></div><div class="rx-score__label">Content Quality</div></div>
+            <div class="rx-score"><div class="rx-score__value"><span style="color:var(--pulse-tertiary)">–</span></div><div class="rx-score__label">Mobile Experience</div></div>
+          </div>
+        </div>
+
+        <div class="rx-section">
+          <h2 class="rx-h-topic">Findings Inventory</h2>
+          <div class="rx-stats" style="margin-bottom:28px">
+            <div class="rx-stat rx-stat--accent"><div class="rx-stat__value">2</div><div class="rx-stat__label">High priority</div></div>
+            <div class="rx-stat"><div class="rx-stat__value">7</div><div class="rx-stat__label">Medium priority</div></div>
+            <div class="rx-stat"><div class="rx-stat__value">8</div><div class="rx-stat__label">Low priority</div></div>
+          </div>
+          <div class="rx-table-wrap"><table class="rx-table">
+            <thead class="rx-table-head"><tr><th style="width:34px">#</th><th style="width:26%">Check</th><th>Finding</th><th style="width:64px">Impact</th></tr></thead>
+            <tbody>
+              <tr><td class="num">01</td><td class="k">Stat block renders as placeholder values</td><td>The "About Us" section displays four stats as '0.0x', '+0', '0%'.</td><td><span class="rx-chip rx-chip--high">High</span></td></tr>
+              <tr><td class="num">02</td><td class="k">Service menu before qualification</td><td>The top nav exposes 12 distinct service links before the page says which applies.</td><td><span class="rx-chip rx-chip--medium">Med</span></td></tr>
+              <tr><td class="num">03</td><td class="k">Footer link density</td><td>Footer repeats the full service list a second time.</td><td><span class="rx-chip rx-chip--low">Low</span></td></tr>
+            </tbody>
+          </table></div>
+          <p class="rx-caption">Showing 3 of 17. The remaining findings continue in the detailed section below.</p>
+        </div>
+
+        <div class="rx-section">
+          <h2 class="rx-h-topic" style="margin-bottom:6px">Detailed Findings</h2>
+          <p class="rx-body" style="margin-bottom:8px">Each finding names what's on the page, why it costs you, and what to change.</p>
+          <ul style="list-style:none;margin:0;padding:0">
+            <li class="rx-finding">
+              <div><span class="rx-chip rx-chip--high">High</span></div>
+              <div style="min-width:0">
+                <h3 class="rx-finding__title">Stat block renders as placeholder values</h3>
+                <p class="rx-finding__text">The "About Us" section displays four stats as '0.0x', '+0', '0%', '+0%'.</p>
+                <p class="rx-finding__why">This section exists to prove credibility with numbers, but every number reads as an unfilled template.</p>
+                <p class="rx-finding__fix"><b>Fix → </b>Populate the stat block with real figures before launch, or remove the section until the data is ready.</p>
+                <div class="rx-finding__ref">Nielsen #1: Visibility of System Status · high confidence · high impact on users · trivial to fix</div>
+                <button class="rx-finding__toggle">Show evidence <svg class="rx-icon rx-icon--sm" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chevron-down"/></svg></button>
+              </div>
+            </li>
+            <li class="rx-finding">
+              <div><span class="rx-chip rx-chip--medium">Medium</span></div>
+              <div style="min-width:0">
+                <h3 class="rx-finding__title">Service menu before qualification</h3>
+                <p class="rx-finding__text">The top nav exposes 12 distinct service links plus 3 industry links.</p>
+                <p class="rx-finding__why">A visitor has to self-sort across 12+ overlapping service names before deciding where to click.</p>
+                <p class="rx-finding__fix"><b>Fix → </b>Collapse the nav into the 2–3 top-level paths the hero already establishes.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="rx-section">
+          <div class="rx-callout rx-callout--scope">
+            <span class="rx-eyebrow">What this scan covers, and doesn't</span>
+            <div class="rx-callout__text"><strong>Covers:</strong> the resting homepage. <strong>Doesn't cover:</strong> signed-in flows, real devices.</div>
+          </div>
+        </div>
+
+        <div class="rx-unlock rx-gradient-card">
+          <p class="rx-unlock__title">Unlock the In-Depth Audit</p>
+          <p class="rx-unlock__text">This scan already turned up real issues across four more areas — a full ReloadUX audit unlocks the complete breakdown for each.</p>
+          <div class="rx-unlock__grid">
+            <div class="rx-unlock__tile"><div class="rx-unlock__tile-head"><p class="rx-unlock__tile-label">Business Impact Summary</p><p class="rx-unlock__tile-count">6</p></div><p class="rx-unlock__tile-text">How each issue translates into real business risk and cost.</p></div>
+            <div class="rx-unlock__tile"><div class="rx-unlock__tile-head"><p class="rx-unlock__tile-label">AI SEO</p><p class="rx-unlock__tile-count">3</p></div><p class="rx-unlock__tile-text">Structured data, schema types, and AI-answer-engine readiness.</p></div>
+          </div>
+          <a class="rx-btn rx-btn--white" style="font-weight:700;padding:14px 28px;text-decoration:none">Talk to an expert</a>
+        </div>
+
+        <div class="rx-report__cta">
+          <p>Your report is ready to download</p>
+          <button class="rx-btn rx-btn--report rx-btn--lg">
+            <svg class="rx-icon rx-icon--sm" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-download"/></svg>
+            Download PDF
+          </button>
+        </div>
+      </section>
+
+      <div class="rx-msg">
+        <img class="rx-avatar" src="../../assets/images/avatar-icon.png" alt="ReloadUX">
+        <div class="rx-msg__body">
+          <p>Ask me anything about this report.</p>
+          <div class="rx-suggestions">
+            <button class="rx-suggestion">What are the major findings?</button>
+            <button class="rx-suggestion">What are the minor findings?</button>
+            <button class="rx-suggestion">What's the single biggest risk here?</button>
+            <button class="rx-suggestion">What should I fix first?</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rx-user-row"><div class="rx-user-bubble">What should I fix first?</div></div>
+      <div class="rx-msg">
+        <img class="rx-avatar" src="../../assets/images/avatar-icon.png" alt="ReloadUX">
+        <div class="rx-msg__body"><span class="rx-dots"><span></span><span></span><span></span></span></div>
+      </div>
+    </div>
+
+    <aside class="rx-thread__rail"><div class="rx-thread__rail-sticky">
+      <div class="rx-promo rx-gradient-card">
+        <img class="rx-avatar rx-avatar--lg" src="../../assets/images/avatar-icon.png" alt="">
+        <p class="rx-promo__title">Get full audit</p>
+        <p class="rx-promo__text">This basic scan catches the obvious stuff. A full ReloadUX audit goes deeper: goal-mapped findings, root-cause analysis across five expert lenses, and a fix-it roadmap your team can act on.</p>
+        <a class="rx-btn rx-btn--white" style="text-decoration:none">Talk to an expert</a>
+      </div>
+    </div></aside>
+  </div>
+</div>
+
+<!-- Composer (fixed to the viewport bottom, exactly as in the app) -->
+<div class="rx-composer">
+  <div class="rx-composer__shell">
+    <div class="rx-composer__field">
+      <textarea rows="1" placeholder="Ask Pulse"></textarea>
+      <button class="rx-icon-btn rx-icon-btn--outline" aria-label="Start voice input">
+        <svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-mic"/></svg>
+      </button>
+      <button class="rx-icon-btn rx-icon-btn--send" disabled aria-label="Send">
+        <svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow-up"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<hr class="kit-divider">
+
+<!-- ============================== KIT ============================== -->
+<section class="kit-section" style="padding-bottom:240px">
+  <h2 class="kit-h">Parts</h2>
+  <p class="kit-sub">The building blocks on their own. Toggle the theme (bottom-right) to see both palettes.</p>
+
+  <p class="kit-label">Color</p>
+  <div class="kit-swatches">
+    <div class="kit-swatch"><div style="background:var(--pulse-ink)"></div><p>ink<span>#090909 / #f2f2f2</span></p></div>
+    <div class="kit-swatch"><div style="background:var(--pulse-surface)"></div><p>surface<span>#ffffff / #0e0e0e</span></p></div>
+    <div class="kit-swatch"><div style="background:var(--pulse-tint)"></div><p>tint<span>#f0f0f0 / #1c1c1e</span></p></div>
+    <div class="kit-swatch"><div style="background:var(--pulse-hairline)"></div><p>hairline<span>#d9d9d9 / #2c2c2e</span></p></div>
+    <div class="kit-swatch"><div style="background:var(--pulse-muted)"></div><p>muted<span>#a5a9ac / #8b8f94</span></p></div>
+    <div class="kit-swatch"><div style="background:var(--pulse-accent)"></div><p>accent<span>#7f56d9 / #9b7ce8</span></p></div>
+    <div class="kit-swatch"><div style="background:var(--pulse-secondary)"></div><p>secondary<span>#565656 / #b4b8bc</span></p></div>
+    <div class="kit-swatch"><div style="background:var(--pulse-fill)"></div><p>fill<span>#f5f5f5 / #17171a</span></p></div>
+    <div class="kit-swatch"><div class="rx-table-head"></div><p>table head<span>accent → #000</span></p></div>
+    <div class="kit-swatch"><div class="rx-gradient-card"></div><p>promo gradient<span>#0a0a0f + violet glow</span></p></div>
+  </div>
+
+  <p class="kit-label">Type</p>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="rx-font-display" style="font-size:48px;line-height:1.25">Italic display — the AI's voice</div>
+    <div class="rx-font-report" style="font-size:34px;line-height:1.1">Upright bold — the report's structure</div>
+    <div style="font-size:16px;line-height:1.625">Manrope 16 / 1.625 — chat messages read like this, plain and roomy.</div>
+    <div style="font-size:14px;line-height:20px">Manrope 14 / 20 — default UI text, buttons, chips and fields.</div>
+    <div style="font-size:12px;line-height:16px;color:var(--pulse-muted)">Manrope 12 / 16 muted — captions and hints.</div>
+    <span class="rx-eyebrow">Eyebrow · 11px bold · 0.16em</span>
+  </div>
+
+  <p class="kit-label">Buttons</p>
+  <div class="kit-row">
+    <button class="rx-btn rx-btn--primary">Looks right, confirm</button>
+    <button class="rx-btn rx-btn--secondary">Audit it anyway</button>
+    <button class="rx-btn rx-btn--primary" disabled>Disabled</button>
+    <button class="rx-btn rx-btn--report"><svg class="rx-icon rx-icon--sm" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-download"/></svg>Download PDF</button>
+    <button class="rx-icon-btn rx-icon-btn--send-lg"><svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow-right"/></svg></button>
+    <button class="rx-icon-btn rx-icon-btn--outline"><svg class="rx-icon" fill="none" stroke="url(#pulse-mic-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-mic"/></svg></button>
+  </div>
+
+  <p class="kit-label">Mode pills, answer chips</p>
+  <div class="rx-pills">
+    <button class="rx-pill is-active">URL<span class="rx-pill__tag">recommended</span></button>
+    <button class="rx-pill">Image</button>
+    <button class="rx-pill">PDF</button>
+    <button class="rx-pill">Flow of screenshots</button>
+  </div>
+  <div class="kit-row" style="margin-top:12px">
+    <button class="rx-chip-answer">Homepage</button>
+    <button class="rx-chip-answer">Pricing page</button>
+    <button class="rx-chip-skip">Skip</button>
+  </div>
+
+  <p class="kit-label">Composer with goal cards</p>
+  <div class="rx-composer kit-composer-demo">
+    <div class="rx-composer__shell">
+      <div class="rx-composer__chips">
+        <div style="width:100%">
+          <p class="rx-goals__q">Is there a specific goal or outcome you'd like this audit to speak to?</p>
+          <div class="rx-goals">
+            <button class="rx-goal"><p class="rx-goal__title">More consultation bookings</p><p class="rx-goal__desc">Make the path from landing to "Book a call" shorter and clearer.</p></button>
+            <button class="rx-goal"><p class="rx-goal__title">Stronger credibility</p><p class="rx-goal__desc">Surface proof — case studies, outcomes, logos — earlier.</p></button>
+          </div>
+          <p class="rx-goals__foot">Or type your own goal in the box below.</p>
+        </div>
+      </div>
+      <div class="rx-composer__field">
+        <textarea rows="1" placeholder="Optional — type a goal, or skip…"></textarea>
+        <button class="rx-icon-btn rx-icon-btn--send" disabled><svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow-up"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <p class="kit-label">Fields</p>
+  <div style="max-width:448px;display:flex;flex-direction:column;gap:16px">
+    <div><label class="rx-label">Page URL</label><input class="rx-field" placeholder="https://"></div>
+    <div><label class="rx-label">Live URL</label><input class="rx-field is-invalid" value="reloadux"><p class="rx-field-error">That doesn't look like a valid URL — include http:// or https://.</p></div>
+    <label class="rx-dropzone"><svg class="rx-icon" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-upload"/></svg>Choose a file…</label>
+  </div>
+
+  <p class="kit-label">Flow steps</p>
+  <ol class="rx-steps" style="max-width:576px">
+    <li><span class="rx-steps__thumb"></span><span class="rx-steps__n">1</span><span class="rx-steps__label">Landing page</span></li>
+    <li><span class="rx-steps__thumb"></span><span class="rx-steps__n">2</span><span class="rx-steps__label">Sign up</span></li>
+    <li><span class="rx-steps__thumb"></span><span class="rx-steps__n">3</span><span class="rx-steps__label">Verify email</span><span class="rx-badge">Gap</span></li>
+  </ol>
+</section>
+
+<script>
+  // Theme toggle (both buttons) — same rule as the app: icon shows the current theme.
+  function syncIcons() {
+    var dark = document.documentElement.classList.contains("dark");
+    document.querySelectorAll("#theme-icon, .theme-icon-use").forEach(function (u) {
+      u.setAttribute("href", dark ? "#i-moon" : "#i-sun");
+    });
+  }
+  function toggleTheme() {
+    var dark = document.documentElement.classList.toggle("dark");
+    try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+    syncIcons();
+  }
+  document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
+  syncIcons();
+
+  // Landing input: send enables only for a valid URL.
+  var url = document.getElementById("landing-url"), send = document.getElementById("landing-send");
+  url.addEventListener("input", function () {
+    // The paperclip only shows while the field is empty.
+    document.getElementById("landing-attach").style.display = url.value.trim() ? "none" : "";
+    try { var u = new URL(url.value.trim()); send.disabled = !/^https?:$/.test(u.protocol); } catch (e) { send.disabled = true; }
+  });
+
+  // Cycling hero noun (2.4s) and running phrases (2.4s).
+  var words = ["Website", "App", "Product", "SaaS"], wi = 1, cyc = document.getElementById("cycle");
+  setInterval(function () {
+    wi = (wi + 1) % words.length;
+    cyc.animate([{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(-10px)" }], { duration: 175, easing: "ease-in-out" })
+      .onfinish = function () {
+        cyc.textContent = words[wi];
+        cyc.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 175, easing: "ease-in-out" });
+      };
+  }, 2400);
+  var phrases = ["Squinting at your button hierarchy…", "Interrogating your color contrast…", "Weighing severity like a tiny judge…", "Double-checking our double-checking…"], pi = 0, ph = document.getElementById("phrase");
+  setInterval(function () {
+    pi = (pi + 1) % phrases.length;
+    ph.animate([{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(-6px)" }], { duration: 150 })
+      .onfinish = function () {
+        ph.textContent = phrases[pi];
+        ph.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 150 });
+      };
+  }, 2400);
+</script>
+</body>
+</html>

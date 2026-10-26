@@ -1,0 +1,50 @@
+/* ==========================================================================
+   ReloadUX · Pulse — OPTIONAL Tailwind v4 bridge
+   --------------------------------------------------------------------------
+   Only needed if you want to write your own Tailwind classes with Pulse
+   values (the React components don't need it). Import it in your main CSS
+   AFTER tailwind and after pulse.css:
+
+     @import "tailwindcss";
+     @import "../pulse-design-system/styles/pulse.css";
+     @import "../pulse-design-system/styles/tailwind.css";
+
+   Utilities are namespaced so they can't collide with shadcn/your theme:
+     bg-pulse-ink  text-pulse-surface  bg-pulse-tint  border-pulse-hairline
+     text-pulse-muted  text-pulse-accent  bg-pulse-accent-soft  bg-pulse-fill
+     text-pulse-secondary  text-pulse-tertiary  border-pulse-rule
+     font-pulse-sans  font-pulse-serif  shadow-pulse-soft  shadow-pulse-soft-lg
+     ease-pulse
+   Opacity modifiers work: text-pulse-ink/60.
+
+   Dark mode follows the `.dark` class on <html>. If your project's `dark:`
+   variant isn't class-based yet, add:  @custom-variant dark (&:where(.dark, .dark *));
+   (Tailwind v3 projects: use the --pulse-* variables in tailwind.config's
+   theme.extend.colors instead, e.g. "pulse-ink": "var(--pulse-ink)".)
+   ========================================================================== */
+
+@theme inline {
+  --color-pulse-ink: var(--pulse-ink);
+  --color-pulse-surface: var(--pulse-surface);
+  --color-pulse-tint: var(--pulse-tint);
+  --color-pulse-hairline: var(--pulse-hairline);
+  --color-pulse-muted: var(--pulse-muted);
+  --color-pulse-accent: var(--pulse-accent);
+  --color-pulse-accent-soft: var(--pulse-accent-soft);
+  --color-pulse-accent-faint: var(--pulse-accent-faint);
+  --color-pulse-secondary: var(--pulse-secondary);
+  --color-pulse-tertiary: var(--pulse-tertiary);
+  --color-pulse-fill: var(--pulse-fill);
+  --color-pulse-rule: var(--pulse-rule);
+  --color-pulse-pass: var(--pulse-pass);
+  --color-pulse-warn: var(--pulse-warn);
+  --color-pulse-fail: var(--pulse-fail);
+
+  --font-pulse-sans: "Manrope", system-ui, sans-serif;
+  --font-pulse-serif: "Libre Baskerville", Georgia, serif;
+
+  --shadow-pulse-soft: 0px 4px 28px rgba(0, 0, 0, 0.06);
+  --shadow-pulse-soft-lg: 0px 8px 40px rgba(0, 0, 0, 0.08);
+
+  --ease-pulse: cubic-bezier(0.22, 1, 0.36, 1);
+}

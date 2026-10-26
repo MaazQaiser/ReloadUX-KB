@@ -153,3 +153,6 @@ export const TAG_LIST_TITLES: Record<TagListName, string> = {
   ai_features: "AI features",
   flows: "Flows",
 };
+
+/** localStorage key for the light/dark choice; unset means follow the system setting. */
+export const THEME_STORAGE_KEY = "theme";
