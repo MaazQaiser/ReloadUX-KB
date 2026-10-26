@@ -23,18 +23,18 @@ function SheetContent({ className, children, ...props }: React.ComponentProps<ty
     <SheetPrimitive.Portal>
       <SheetPrimitive.Overlay
         data-slot="sheet-overlay"
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
       />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "rx-corner-glow fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-md flex-col border-l border-white/10 shadow-2xl transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:duration-300 data-[state=open]:slide-in-from-right",
+          "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-md flex-col border-l bg-background shadow-pulse-soft-lg transition ease-pulse sm:inset-y-3 sm:right-3 sm:h-auto sm:rounded-3xl sm:border data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:duration-300 data-[state=open]:slide-in-from-right",
           className
         )}
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute top-5 right-5 grid size-9 place-items-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">
+        <SheetPrimitive.Close className="absolute top-5 right-5 grid size-9 place-items-center rounded-full text-foreground/50 transition-colors duration-300 hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-ring/15 outline-none">
           <XIcon className="size-5" aria-hidden />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
@@ -44,11 +44,11 @@ function SheetContent({ className, children, ...props }: React.ComponentProps<ty
 }
 
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="sheet-header" className={cn("flex flex-col gap-1.5 border-b border-white/10 p-6 pr-16", className)} {...props} />
+  return <div data-slot="sheet-header" className={cn("flex flex-col gap-1.5 border-b p-6 pr-16", className)} {...props} />
 }
 
 function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="sheet-footer" className={cn("mt-auto flex items-center gap-3 border-t border-white/10 p-6", className)} {...props} />
+  return <div data-slot="sheet-footer" className={cn("mt-auto flex items-center gap-3 border-t p-6", className)} {...props} />
 }
 
 function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
