@@ -23,7 +23,12 @@ function LinkList({ links }: { links: ProjectLink[] }) {
     <ul className="flex flex-col gap-1">
       {links.map((link) => (
         <li key={link.url}>
-          <a href={link.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-border underline-offset-4 transition-colors duration-300 hover:decoration-foreground/40"
+          >
             {link.label}
             <span className="sr-only"> (opens in a new tab)</span>
           </a>
@@ -37,7 +42,7 @@ export function ProjectSidebar({ detail: { project, people, completeness } }: { 
   const linkGroups = LINK_GROUPS.filter(([field]) => project[field].length > 0);
 
   return (
-    <aside className="flex flex-col gap-8">
+    <aside className="flex min-w-0 flex-col gap-10">
       <CompletenessMeter completeness={completeness} />
 
       <DetailSection title="People">
@@ -61,10 +66,10 @@ export function ProjectSidebar({ detail: { project, people, completeness } }: { 
           <Field label="Duration">{project.duration_weeks && formatWeeks(project.duration_weeks)}</Field>
         </FieldList>
         {project.milestones.length > 0 && (
-          <ol className="flex flex-col gap-1 border-l pl-4 text-sm">
+          <ol className="flex flex-col gap-1.5 border-l-[3px] border-pulse-rule pl-4 text-[13px]">
             {project.milestones.map((milestone) => (
               <li key={`${milestone.name}-${milestone.date.toISOString()}`}>
-                <span className="text-muted-foreground">{formatDate(milestone.date)}</span> · {milestone.name}
+                <span className="text-pulse-tertiary tabular-nums">{formatDate(milestone.date)}</span> · {milestone.name}
               </li>
             ))}
           </ol>

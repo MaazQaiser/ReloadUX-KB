@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ArrowLeft, Pencil } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -18,8 +19,12 @@ export const metadata: Metadata = { title: "project" };
 export default function ProjectPage({ params }: PageProps<"/projects/[slug]">) {
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/projects" className="text-sm text-soft-foreground hover:text-foreground">
-        ← All projects
+      <Link
+        href="/projects"
+        className="flex w-fit items-center gap-2 rounded-full text-sm text-foreground/60 transition-colors duration-300 outline-none hover:text-foreground focus-visible:ring-4 focus-visible:ring-ring/15"
+      >
+        <ArrowLeft aria-hidden className="size-4" />
+        All projects
       </Link>
       <Suspense fallback={<DetailSkeleton />}>
         <ProjectView params={params} />
@@ -38,19 +43,23 @@ async function ProjectView({ params }: { params: Promise<{ slug: string }> }) {
   const [gallery, catalog] = await Promise.all([getProjectGallery(detail.project.id), getTagCatalog()]);
 
   return (
-    <div className="flex flex-col gap-12">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+    // Pulse's report frame: the record reads as a square, ruled document, not a chat card.
+    <article className="border border-pulse-rule bg-background px-6 py-8 animate-in fade-in-0 slide-in-from-bottom-5 duration-400 ease-pulse sm:px-12 sm:py-12 motion-reduce:animate-none">
+      <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <ProjectHeader project={detail.project} catalog={catalog} />
         {hasRole(user.role, "editor") && (
-          <Link href={`/projects/${detail.project.slug}/edit`} className={buttonVariants({ variant: "outline" })}>
+          <Link href={`/projects/${detail.project.slug}/edit`} className={buttonVariants({ className: "font-bold" })}>
+            <Pencil aria-hidden />
             Edit project
           </Link>
         )}
       </div>
-      <div className="grid gap-16 lg:grid-cols-[1fr_22rem]">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-0">
         <ProjectMain project={detail.project} gallery={gallery} catalog={catalog} />
-        <ProjectSidebar detail={detail} />
+        <div className="lg:border-l lg:border-pulse-rule lg:pl-10 lg:ml-10">
+          <ProjectSidebar detail={detail} />
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
