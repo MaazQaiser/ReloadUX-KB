@@ -9,16 +9,16 @@ const BUILT_IN = builtInCatalog();
 
 export function AnswerProjectCard({ project }: { project: AnswerProject }) {
   return (
-    <article className="rx-hover-wash flex h-full flex-col gap-3 border border-white/15 bg-card p-5 transition-[border-color] duration-400 focus-within:border-transparent hover:border-transparent">
-      <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">
+    <article className="relative flex h-full flex-col gap-3 rounded-2xl border bg-card p-5 shadow-pulse-soft transition-all duration-300 ease-pulse focus-within:-translate-y-0.5 focus-within:shadow-pulse-soft-lg hover:-translate-y-0.5 hover:shadow-pulse-soft-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+      <p className="text-xs tracking-wide text-pulse-muted uppercase">
         {tagLabel(BUILT_IN.industry, project.industry)}
       </p>
-      <h3 className="font-heading text-xl leading-snug">
+      <h3 className="text-base leading-snug font-medium">
         <Link href={`/projects/${project.slug}`} className="underline-offset-4 hover:underline">
           {project.name}
         </Link>
       </h3>
-      <p className="text-sm text-soft-foreground">{project.why}</p>
+      <p className="text-sm leading-relaxed text-foreground/70">{project.why}</p>
       <TagBadges list={BUILT_IN.product_types} values={project.product_types} variant="outline" />
       {project.links.length > 0 && (
         <ul className="mt-auto flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-sm">
@@ -28,7 +28,7 @@ export function AnswerProjectCard({ project }: { project: AnswerProject }) {
                 href={link.url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                className="inline-flex items-center gap-1 text-foreground/60 transition-colors duration-300 hover:text-foreground"
               >
                 {link.label}
                 <ExternalLink aria-hidden className="size-3" />

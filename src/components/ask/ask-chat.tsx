@@ -50,34 +50,40 @@ export function AskChat({ starters, name }: { starters: readonly string[]; name?
   }
 
   return (
-    // Bottom padding keeps the last answer clear of the floating ask bar.
-    <div className="flex flex-1 flex-col gap-10 pb-36">
+    // Pulse's single 840px column; the bottom padding keeps the last answer clear of the floating composer.
+    <div className="mx-auto flex w-full max-w-[52.5rem] flex-1 flex-col gap-8 pb-40">
       {turns.length === 0 ? (
-        // The welcome fills the space above the ask bar, centred, until the first question.
+        // The welcome fills the space above the composer until the first question.
         <section
           aria-labelledby="ask-welcome"
-          className="rx-glow-band -mx-4 flex flex-1 flex-col items-center justify-center gap-6 px-4 py-6 text-center sm:-mx-8 sm:gap-10 sm:py-12"
+          className="flex flex-1 animate-in flex-col justify-center gap-10 py-6 duration-500 ease-pulse fade-in-0 slide-in-from-bottom-5 sm:py-12 motion-reduce:animate-none"
         >
-          <div className="flex flex-col items-center gap-3 sm:gap-4">
+          <div className="flex flex-col items-start gap-4">
             <PreviewBadge />
-            <h1 id="ask-welcome" className="max-w-3xl text-3xl leading-tight sm:text-5xl">
-              {name ? `Hey ${name}, I'm here to help.` : "Hi, I'm here to help."}
+            <h1 id="ask-welcome" className="font-heading text-3xl leading-tight italic sm:text-4xl md:text-5xl">
+              {name ? (
+                <>
+                  Hey <span className="rx-gradient-text pr-1">{name}</span>, I&apos;m here to help.
+                </>
+              ) : (
+                "Hi, I'm here to help."
+              )}
             </h1>
-            <p className="max-w-xl text-base text-soft-foreground sm:text-lg">
+            <p className="max-w-xl text-base leading-relaxed text-foreground/60">
               Tell me what you&apos;re looking for and I&apos;ll find the relevant work.
             </p>
           </div>
-          {/* One swipeable row on phones so the suggestions stay above the ask bar; wrapped and centred from sm up. */}
+          {/* One swipeable row on phones so the suggestions stay above the composer; wrapped from sm up. */}
           <ul
             aria-label="Suggestions"
-            className="-mx-4 flex w-[calc(100%+2rem)] max-w-none snap-x scroll-px-4 gap-2.5 overflow-x-auto px-4 py-2 sm:mx-0 sm:w-auto sm:max-w-3xl sm:flex-wrap sm:justify-center sm:overflow-visible"
+            className="-mx-4 flex w-[calc(100%+2rem)] max-w-none snap-x scroll-px-4 gap-2 overflow-x-auto px-4 py-2 sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0"
           >
             {starters.map((starter) => (
               <li key={starter} className="shrink-0 snap-start">
                 <button
                   type="button"
                   onClick={() => send(starter)}
-                  className="rx-glass px-4 py-2 text-[13px] whitespace-nowrap text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  className="rounded-full border bg-background px-3.5 py-1.5 text-sm whitespace-nowrap text-foreground/70 transition-all duration-300 ease-pulse outline-none hover:-translate-y-0.5 hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-ring/15 active:scale-95 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                 >
                   {starter}
                 </button>
@@ -88,7 +94,7 @@ export function AskChat({ starters, name }: { starters: readonly string[]; name?
       ) : (
         <>
           <h1 className="sr-only">Ask about projects</h1>
-          <ol className="flex flex-col gap-10" aria-label="Conversation">
+          <ol className="flex flex-col gap-8" aria-label="Conversation">
             {turns.map((turn) => (
               <AnswerTurn key={turn.key} turn={turn} />
             ))}
@@ -101,10 +107,10 @@ export function AskChat({ starters, name }: { starters: readonly string[]; name?
       </p>
       <div ref={endRef} />
 
-      {/* Floats over the page like the reloadux.com ask bar; only the pill takes clicks. */}
+      {/* Pulse's floating glass composer; only the shell takes clicks so the page stays scrollable around it. */}
       <form
         onSubmit={onSubmit}
-        className="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-40 flex flex-col items-center gap-2 px-4"
+        className="pointer-events-none fixed inset-x-0 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-30 flex flex-col items-center gap-2 px-4 sm:px-6"
       >
         <Label htmlFor="ask-question" className="sr-only">
           Ask about past projects
@@ -116,49 +122,41 @@ export function AskChat({ starters, name }: { starters: readonly string[]; name?
             if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
           }}
           className={cn(
-            "pointer-events-auto flex w-full items-center rx-glow-stroke rounded-full border border-white/12 bg-[rgb(22_22_28/0.55)] backdrop-blur-2xl backdrop-saturate-150 transition-[max-width,padding,gap,border-color] duration-300 ease-out focus-within:border-white/25 motion-reduce:transition-none",
-            expanded ? "max-w-3xl gap-3 px-3.5 py-2.5 md:px-4 md:py-3" : "max-w-md gap-2 px-2 py-1.5",
+            "pointer-events-auto w-full rounded-[1.75rem] border bg-background/50 shadow-pulse-soft backdrop-blur-xl transition-[max-width,padding] duration-300 ease-pulse motion-reduce:transition-none",
+            expanded ? "max-w-[44.1rem] p-3 sm:p-4" : "max-w-md p-1.5",
           )}
         >
-          <span aria-hidden className={cn("rx-gradient-ring shrink-0 p-0.5 transition-[width,height] duration-300", expanded ? "size-9" : "size-7")}>
-            <span className="grid size-full place-items-center rounded-full bg-[#d9d9d9] text-[10px] font-extrabold text-black">UX</span>
-          </span>
-          <Textarea
-            ref={inputRef}
-            id="ask-question"
-            value={question}
-            maxLength={MAX_QUESTION_LENGTH}
-            onChange={(event) => setQuestion(event.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={expanded ? "Have we done a healthcare chatbot?" : "Ask about past projects…"}
-            aria-describedby="ask-hint"
-            className={cn(
-              "max-h-48 min-h-0 resize-none rounded-none border-0 bg-transparent px-0 py-1 focus-visible:ring-0 dark:bg-transparent",
-              expanded ? "text-base md:text-base" : "text-sm md:text-sm",
+          <div className="flex items-end gap-2 rounded-3xl border bg-muted p-1.5 transition-colors duration-300 focus-within:border-foreground/25">
+            <Textarea
+              ref={inputRef}
+              id="ask-question"
+              value={question}
+              maxLength={MAX_QUESTION_LENGTH}
+              onChange={(event) => setQuestion(event.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder={busy ? "Working on it…" : expanded ? "Have we done a healthcare chatbot?" : "Ask about past projects…"}
+              aria-describedby="ask-hint"
+              className="max-h-48 min-h-10 resize-none rounded-none border-0 bg-transparent px-3 py-2.5 text-sm hover:bg-transparent focus-visible:ring-0 md:text-sm"
+              rows={1}
+            />
+            {busy ? (
+              <Button type="button" size="icon" onClick={stop} aria-label="Stop" className={SEND_BUTTON}>
+                <Square aria-hidden className="size-3.5 fill-current" />
+              </Button>
+            ) : (
+              <Button type="submit" size="icon" disabled={!question.trim()} aria-label="Ask" className={SEND_BUTTON}>
+                <ArrowUp aria-hidden strokeWidth={2} />
+              </Button>
             )}
-            rows={1}
-          />
-          {busy ? (
-            <Button type="button" variant="secondary" size={expanded ? "icon-lg" : "icon"} onClick={stop} aria-label="Stop" className="rounded-full bg-white/10">
-              <Square aria-hidden />
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              variant="secondary"
-              size={expanded ? "icon-lg" : "icon"}
-              disabled={!question.trim()}
-              aria-label="Ask"
-              className="rounded-full bg-white/10 text-foreground disabled:opacity-40"
-            >
-              <ArrowUp aria-hidden />
-            </Button>
-          )}
+          </div>
         </div>
-        <p id="ask-hint" className={cn("pointer-events-auto text-xs text-muted-foreground", !expanded && "sr-only")}>
+        <p id="ask-hint" className={cn("pointer-events-auto text-xs text-pulse-muted", !expanded && "sr-only")}>
           Enter to send, Shift+Enter for a new line.
         </p>
       </form>
     </div>
   );
 }
+
+// Pulse's round ink send: grows a little on hover and presses in, instead of the usual lift.
+const SEND_BUTTON = "shadow-none hover:translate-y-0 hover:scale-105 hover:shadow-pulse-soft active:scale-90";

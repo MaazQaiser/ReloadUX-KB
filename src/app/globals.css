@@ -59,6 +59,17 @@
   --radius-2xl: 16px;
   --radius-3xl: 24px;
   --radius-4xl: 32px;
+  /* Pulse's "still working" dots: each rises 4px and settles, staggered by 150ms. */
+  --animate-thinking-dot: thinking-dot 0.7s ease-in-out infinite;
+  @keyframes thinking-dot {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
 }
 
 /* shadcn's names, pointed at Pulse tokens so every screen follows the theme and flips with .dark. */
@@ -314,5 +325,13 @@
     &::before {
       transition: none;
     }
+  }
+}
+
+/* The kit leaves its two looping gradients running for everyone; respect reduced motion here. */
+@media (prefers-reduced-motion: reduce) {
+  .rx-gradient-text,
+  .rx-gradient-card {
+    animation: none;
   }
 }

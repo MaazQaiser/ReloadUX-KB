@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@pulse/*": [
+        "./pulse-design-system/*"
       ]
     },
     "noUncheckedIndexedAccess": true
