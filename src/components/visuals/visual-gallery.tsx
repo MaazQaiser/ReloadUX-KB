@@ -9,7 +9,13 @@ export function VisualGallery({ visuals, projectName, flows }: { visuals: Visual
     <ul className="grid gap-6 sm:grid-cols-2">
       {ordered.map((visual) => (
         <li key={visual.id} className="flex flex-col gap-2">
-          <a href={visual.url} target="_blank" rel="noopener noreferrer" aria-label={`Open full size: ${visual.caption ?? projectName}`}>
+          <a
+            href={visual.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open full size: ${visual.caption ?? projectName}`}
+            className="cursor-zoom-in rounded-2xl outline-none focus-visible:ring-4 focus-visible:ring-ring/15"
+          >
             <VisualImage url={visual.url} alt={visual.caption ?? `Screenshot from ${projectName}`} sizes="(min-width: 640px) 50vw, 100vw" />
           </a>
           <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">

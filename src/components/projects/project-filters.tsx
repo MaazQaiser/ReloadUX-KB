@@ -153,7 +153,11 @@ export function ProjectFiltersBar({
               <SlidersHorizontal aria-hidden />
               More filters
               {moreCount > 0 && (
-                <span className="grid size-5 place-items-center rounded-full bg-primary text-xs text-primary-foreground" aria-label={`${moreCount} set`}>
+                // Inverts with the button, which fills with ink on hover and while the panel is open.
+                <span
+                  className="grid size-5 place-items-center rounded-full bg-primary text-xs text-primary-foreground transition-colors duration-300 group-hover/button:bg-primary-foreground group-hover/button:text-primary group-aria-expanded/button:bg-primary-foreground group-aria-expanded/button:text-primary"
+                  aria-label={`${moreCount} set`}
+                >
                   {moreCount}
                 </span>
               )}

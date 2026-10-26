@@ -22,9 +22,9 @@ export function UsersSection({ users, currentUserId }: { users: User[]; currentU
           : "Nobody is waiting for approval."}{" "}
         Pending people can sign in but see nothing. Set someone back to pending to revoke their access.
       </p>
-      <div className="overflow-x-auto border">
+      <div className="overflow-x-auto rounded-2xl border bg-card shadow-pulse-soft">
         <table className="w-full min-w-[40rem] text-sm">
-          <thead className="border-b text-left text-xs tracking-[0.08em] text-muted-foreground uppercase">
+          <thead className="border-b text-left text-xs tracking-wide text-pulse-muted uppercase">
             <tr>
               <th scope="col" className="p-4 font-medium">Person</th>
               <th scope="col" className="p-4 font-medium">Last signed in</th>

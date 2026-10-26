@@ -85,7 +85,7 @@ export function ProjectForm(props: FormProps) {
     // The page header already draws a rule, so the first section skips its own.
     <form onSubmit={submit} noValidate className="flex flex-col gap-8 [&>section:first-of-type]:border-t-0 [&>section:first-of-type]:pt-0">
       {message && (
-        <div ref={summaryRef} tabIndex={-1} role="alert" className="border border-destructive p-5 text-sm">
+        <div ref={summaryRef} tabIndex={-1} role="alert" className="rounded-2xl border border-destructive/50 bg-destructive/5 p-5 text-sm">
           <p className="font-medium text-destructive">{message}</p>
           {errorList.length > 0 && (
             <ul className="mt-2 list-disc pl-5">
@@ -206,7 +206,7 @@ export function ProjectForm(props: FormProps) {
         </p>
       </Section>
 
-      <div className="sticky bottom-0 flex items-center gap-4 border-t bg-background py-5">
+      <div className="sticky bottom-0 flex items-center gap-4 border-t bg-background/85 py-5 backdrop-blur-md">
         <Button type="submit" size="lg" disabled={pending}>
           {pending ? "Saving…" : props.mode === "edit" ? "Save changes" : "Create project"}
         </Button>

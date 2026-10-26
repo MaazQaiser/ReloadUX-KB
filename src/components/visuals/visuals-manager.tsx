@@ -57,7 +57,7 @@ function VisualRow({ visual, index, count, flows }: { visual: VisualView; index:
     <li className="grid gap-5 border-b py-6 md:grid-cols-[16rem_1fr]">
       <div className="flex flex-col gap-2">
         <VisualImage url={visual.url} alt={visual.caption ?? `Screenshot ${index + 1}`} sizes="16rem" />
-        {visual.is_cover && <p className="text-xs tracking-[0.08em] text-muted-foreground uppercase">Cover image</p>}
+        {visual.is_cover && <p className="text-xs tracking-wide text-pulse-muted uppercase">Cover image</p>}
       </div>
       <form action={save} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
@@ -157,6 +157,7 @@ export function VisualsManager({ slug, visuals, flows }: { slug: string; visuals
             disabled={uploading}
             aria-describedby="visual-upload-hint"
             onChange={(event) => void upload(event.target.files)}
+            className="h-auto cursor-pointer border-dashed bg-background py-2.5"
           />
           <div role="status" aria-live="polite" className="text-sm text-soft-foreground">
             {uploading ? "Uploading…" : report.map((line) => <p key={line}>{line}</p>)}

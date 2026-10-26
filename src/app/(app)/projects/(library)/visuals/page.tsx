@@ -102,16 +102,16 @@ async function VisualsView({ searchParams }: { searchParams: PageProps<"/project
         {figma.length === 0 ? (
           <p className="text-sm text-soft-foreground">No project has a Figma file recorded yet.</p>
         ) : (
-          <ul className="grid border-t border-l sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {figma.map(({ project, files }) => (
-              <li key={project.id} className="flex flex-col gap-2 border-r border-b p-5">
+              <li key={project.id} className="flex flex-col gap-2 rounded-2xl border bg-card p-5 shadow-pulse-soft">
                 <Link href={`/projects/${project.slug}`} className="text-lg font-medium underline-offset-4 hover:underline">
                   {project.name}
                 </Link>
                 <ul className="flex flex-col gap-1 text-sm">
                   {files.map((file) => (
                     <li key={file.url}>
-                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
+                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="underline decoration-border underline-offset-4 transition-colors duration-300 hover:decoration-foreground/40">
                         {file.label}
                         <span className="sr-only"> (opens Figma in a new tab)</span>
                       </a>

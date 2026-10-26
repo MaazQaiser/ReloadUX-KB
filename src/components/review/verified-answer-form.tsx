@@ -65,7 +65,7 @@ export function VerifiedAnswerForm({ projects, initial, onDone }: Props) {
           multiple
           defaultValue={initial?.project_slugs}
           size={Math.min(8, Math.max(3, projects.length))}
-          className="border border-input bg-transparent p-1 text-sm"
+          className="rounded-2xl border bg-transparent p-1.5 text-sm outline-none focus-visible:border-foreground/40 focus-visible:ring-4 focus-visible:ring-ring/10"
           aria-describedby={`${prefix}-projects-hint`}
         >
           {projects.map((project) => (

@@ -32,7 +32,7 @@ export function DeleteProject({ slug, name }: { slug: string; name: string }) {
   }
 
   return (
-    <section aria-labelledby="danger-zone" className="flex flex-col gap-4 border border-destructive/50 p-6">
+    <section aria-labelledby="danger-zone" className="flex flex-col gap-4 rounded-2xl border border-destructive/50 p-6">
       <h2 id="danger-zone" className="text-2xl">
         Delete project
       </h2>
