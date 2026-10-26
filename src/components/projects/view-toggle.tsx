@@ -12,7 +12,7 @@ const VIEWS: { view: ProjectView; label: string; Icon: typeof List }[] = [
 export function ViewToggle({ filters, page }: { filters: ProjectFilters; page: number }) {
   const current = filters.view ?? "grid";
   return (
-    <nav aria-label="Layout" className="flex border border-white/15">
+    <nav aria-label="Layout" className="flex gap-0.5 rounded-full border p-0.5">
       {VIEWS.map(({ view, label, Icon }) => {
         const active = view === current;
         return (
@@ -23,8 +23,8 @@ export function ViewToggle({ filters, page }: { filters: ProjectFilters; page: n
             aria-current={active ? "page" : undefined}
             scroll={false}
             className={cn(
-              "grid size-9 place-items-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
-              active && "bg-foreground text-background hover:text-background",
+              "grid size-8 place-items-center rounded-full text-foreground/60 transition-colors duration-300 outline-none hover:text-foreground focus-visible:ring-4 focus-visible:ring-ring/15",
+              active && "bg-primary text-primary-foreground shadow-pulse-soft hover:text-primary-foreground",
             )}
           >
             <Icon aria-hidden className="size-4" />

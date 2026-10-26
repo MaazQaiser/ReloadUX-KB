@@ -38,7 +38,7 @@ function SelectField({ name, label, value, options, onChange, emptyLabel = "Any"
       <Label htmlFor={id} className={compact ? "sr-only" : "text-xs text-muted-foreground"}>
         {label}
       </Label>
-      <NativeSelect id={id} name={name} defaultValue={value ?? ""} onChange={onChange} className="w-full">
+      <NativeSelect id={id} name={name} defaultValue={value ?? ""} onChange={onChange} className="w-full [&_select]:rounded-full">
         <NativeSelectOption value="">{emptyLabel}</NativeSelectOption>
         {options.map((option) => (
           <NativeSelectOption key={option.value} value={option.value}>
@@ -139,6 +139,7 @@ export function ProjectFiltersBar({
             onBlur={() => setTyping(false)}
             placeholder="Search projects or clients"
             maxLength={100}
+            className="rounded-full"
           />
         </div>
         <SelectField key={`industry-${fieldsKey}`} compact name="industry" label="Industry" emptyLabel="All industries" value={filters.industry} options={tagOptions(catalog.industry)} onChange={onSelect} />
@@ -152,7 +153,7 @@ export function ProjectFiltersBar({
               <SlidersHorizontal aria-hidden />
               More filters
               {moreCount > 0 && (
-                <span className="grid size-5 place-items-center rounded-full bg-rx-purple text-xs text-white" aria-label={`${moreCount} set`}>
+                <span className="grid size-5 place-items-center rounded-full bg-primary text-xs text-primary-foreground" aria-label={`${moreCount} set`}>
                   {moreCount}
                 </span>
               )}

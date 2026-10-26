@@ -31,7 +31,7 @@ async function ProfileView() {
         <div className="flex items-center gap-5">
           <UserAvatar name={user.name} photoUrl={user.photo_url} className="size-20 text-xl" />
           <div className="flex flex-col gap-1">
-            <p className="font-heading text-3xl">{user.name}</p>
+            <p className="text-2xl font-medium">{user.name}</p>
             <p className="text-soft-foreground">{user.designation ?? USER_ROLE.labels[user.role]}</p>
           </div>
         </div>

@@ -119,7 +119,7 @@ export function ProjectForm(props: FormProps) {
           <SelectField path="status" label="Status" required value={values.status} onChange={(value) => set("status", value as ProjectFormValues["status"])} options={PROJECT_STATUS.keys.map((key) => ({ value: key, label: PROJECT_STATUS.labels[key] }))} error={errors.status} />
           <TextField path="country" label="Country" value={values.country} onChange={(value) => set("country", value)} error={errors.country} />
           <div className="flex items-center gap-2 pt-6">
-            <input id={fieldId("nda")} type="checkbox" checked={values.nda} onChange={(event) => set("nda", event.target.checked)} className="size-4" />
+            <input id={fieldId("nda")} type="checkbox" checked={values.nda} onChange={(event) => set("nda", event.target.checked)} className="size-4 accent-foreground" />
             <Label htmlFor={fieldId("nda")}>Under NDA (use the client-safe summary outside the team)</Label>
           </div>
         </div>

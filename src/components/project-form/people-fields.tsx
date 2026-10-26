@@ -47,7 +47,7 @@ function AddPerson({ onAdded }: { onAdded: (person: FormPerson, existed: boolean
   }
 
   return (
-    <div className="flex flex-col gap-3 border border-white/10 bg-rx-night p-5">
+    <div className="flex flex-col gap-3 rounded-2xl border bg-muted p-5">
       <p className="text-sm font-medium">Someone missing? Add them here.</p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">

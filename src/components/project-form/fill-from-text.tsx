@@ -33,7 +33,7 @@ export function FillFromText({ catalog, onApply }: { catalog: TagCatalog; onAppl
   }
 
   return (
-    <div className="flex flex-col gap-4 rx-corner-glow border border-white/10 p-5 sm:p-6">
+    <div className="flex flex-col gap-4 rounded-2xl border bg-muted p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <p className="font-medium">Fill from text</p>

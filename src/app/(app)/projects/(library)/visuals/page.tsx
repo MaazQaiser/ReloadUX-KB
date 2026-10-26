@@ -61,7 +61,7 @@ async function VisualsView({ searchParams }: { searchParams: PageProps<"/project
       </form>
 
       {results.length === 0 ? (
-        <div className="flex flex-col items-start gap-3 rx-corner-glow border border-white/10 p-8">
+        <div className="flex flex-col items-start gap-3 rounded-2xl border bg-muted p-8">
           <h2 className="text-2xl">{filtered ? "No screens match" : "No screenshots yet"}</h2>
           <p className="max-w-2xl text-soft-foreground">
             {filtered
@@ -81,7 +81,7 @@ async function VisualsView({ searchParams }: { searchParams: PageProps<"/project
               <a href={visual.url} target="_blank" rel="noopener noreferrer" aria-label={`Open full size: ${visual.caption ?? visual.project.name}`}>
                 <VisualImage url={visual.url} alt={visual.caption ?? `Screenshot from ${visual.project.name}`} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
               </a>
-              <Link href={`/projects/${visual.project.slug}`} className="font-heading text-lg underline-offset-4 hover:underline">
+              <Link href={`/projects/${visual.project.slug}`} className="text-base font-medium underline-offset-4 hover:underline">
                 {visual.project.name}
               </Link>
               <p className="text-sm text-soft-foreground">{visual.caption ?? "No caption yet"}</p>
@@ -105,7 +105,7 @@ async function VisualsView({ searchParams }: { searchParams: PageProps<"/project
           <ul className="grid border-t border-l sm:grid-cols-2 lg:grid-cols-3">
             {figma.map(({ project, files }) => (
               <li key={project.id} className="flex flex-col gap-2 border-r border-b p-5">
-                <Link href={`/projects/${project.slug}`} className="font-heading text-xl underline-offset-4 hover:underline">
+                <Link href={`/projects/${project.slug}`} className="text-lg font-medium underline-offset-4 hover:underline">
                   {project.name}
                 </Link>
                 <ul className="flex flex-col gap-1 text-sm">

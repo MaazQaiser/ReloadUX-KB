@@ -34,7 +34,7 @@ export function GapItem({ gap }: { gap: Pick<KnowledgeGap, "id" | "question" | "
         <p className="text-xs tracking-[0.08em] text-muted-foreground uppercase">
           {REASON_LABELS[gap.reason]} · {gap.asked}
         </p>
-        <p className="font-heading text-xl">“{gap.question}”</p>
+        <p className="text-lg font-medium">“{gap.question}”</p>
         {gap.note && <p className="text-sm text-soft-foreground">What was wrong: {gap.note}</p>}
       </div>
       <form action={action} className="flex shrink-0 flex-col gap-2 lg:w-80">

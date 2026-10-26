@@ -31,7 +31,7 @@ export function VerifiedAnswerItem({ answer, projects }: Props) {
   return (
     <li className="flex flex-col gap-3 border-b py-5">
       <p className="text-xs tracking-[0.08em] text-muted-foreground uppercase">Updated {answer.updated}</p>
-      <p className="font-heading text-xl">“{answer.question}”</p>
+      <p className="text-lg font-medium">“{answer.question}”</p>
       <p className="max-w-3xl whitespace-pre-line text-soft-foreground">{answer.answer}</p>
       {answer.project_slugs.length > 0 && (
         <p className="text-sm text-muted-foreground">

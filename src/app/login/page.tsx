@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { GoogleSignIn } from "@/components/auth/google-sign-in";
-import { LoginShowcase } from "@/components/auth/login-showcase";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Wordmark } from "@/components/wordmark";
 import { getAuthConfig } from "@/env";
@@ -13,22 +13,29 @@ export const metadata: Metadata = { title: "sign in" };
 
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
-    <main id="main" className="grid flex-1 lg:grid-cols-2">
-      <div className="flex flex-col justify-between gap-16 px-6 py-10 sm:px-12 lg:px-16 lg:py-12">
+    // Pulse's landing: the glass-ring art on light grey, or the chrome ribbon on black in dark mode.
+    <main id="main" className="rx-landing-bg flex flex-1 flex-col">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 pt-10 sm:pt-16">
         <Wordmark />
-        <div className="flex w-full max-w-md flex-col gap-10">
+        <div className="flex max-w-2xl flex-1 animate-in flex-col justify-center gap-10 pb-10 duration-500 ease-pulse fade-in-0 slide-in-from-bottom-5 sm:pb-16 motion-reduce:animate-none">
           <div className="flex flex-col gap-4">
-            <p className="text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase">Project intelligence</p>
-            <h1 className="text-5xl leading-tight">Everything we&apos;ve built, one question away.</h1>
-            <p className="text-lg text-soft-foreground">Sign in with your Google account.</p>
+            <p className="text-xs tracking-wide text-foreground/60 uppercase">Project intelligence</p>
+            <h1 className="font-heading text-3xl leading-tight italic sm:text-4xl md:text-5xl">
+              Everything we&apos;ve built, one question away.
+            </h1>
           </div>
-          <Suspense fallback={<Skeleton className="h-12 w-full" />}>
-            <SignInPanel searchParams={searchParams} />
-          </Suspense>
+          <div className="flex w-full max-w-md flex-col gap-4">
+            <Suspense fallback={<Skeleton className="h-12 w-full rounded-full" />}>
+              <SignInPanel searchParams={searchParams} />
+            </Suspense>
+          </div>
+          <p className="text-sm text-foreground/50">
+            Sign in with your Google account. Internal tool for the reloadux team.
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground">Internal tool for the reloadux team.</p>
       </div>
-      <LoginShowcase />
+      {/* Pulse's floating theme toggle; signed-out pages have no header to hold it. */}
+      <ThemeToggle className="fixed right-6 bottom-6 z-40 size-11 shadow-pulse-soft-lg" />
     </main>
   );
 }
@@ -40,9 +47,9 @@ async function SignInPanel({ searchParams }: { searchParams: PageProps<"/login">
   const config = getAuthConfig();
   if (!config) {
     return (
-      <div role="status" className="rx-corner-glow border border-white/10 p-5 text-sm">
+      <div role="status" className="flex flex-col gap-1 rounded-3xl border bg-background p-5 text-sm shadow-pulse-soft-lg">
         <p className="font-medium">Sign-in isn&apos;t set up yet.</p>
-        <p className="text-soft-foreground">
+        <p className="text-foreground/70">
           An admin needs to add the Firebase settings to the server environment (see .env.example). Until then, the app
           stays locked.
         </p>

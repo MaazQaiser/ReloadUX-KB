@@ -46,8 +46,8 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
         </p>
       )}
 
-      <div className="flex items-center justify-between gap-4 border-b pb-4">
-        <p role="status" className="text-xs tracking-[0.08em] text-muted-foreground uppercase">
+      <div className="flex items-center justify-between gap-4">
+        <p role="status" className="text-xs tracking-wide text-pulse-muted uppercase">
           {page.total === 1 ? "1 project" : `${page.total} projects`}
           {hasFilters && " match these filters"}
         </p>
@@ -62,8 +62,8 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
       </div>
 
       {page.items.length === 0 ? (
-        <div className="flex flex-col items-start gap-3 rx-corner-glow border border-white/10 p-10">
-          <h2 className="text-2xl">No projects found</h2>
+        <div className="flex flex-col items-start gap-3 rounded-2xl border bg-muted p-8 sm:p-10">
+          <h2 className="text-xl font-medium">No projects found</h2>
           <p className="text-soft-foreground">
             {hasFilters ? "Nothing matches these filters. Try removing one." : "No approved projects have been added yet."}
           </p>
@@ -76,10 +76,9 @@ async function ProjectsView({ searchParams }: { searchParams: Promise<RawSearchP
       ) : filters.view === "list" ? (
         <ProjectList items={page.items} catalog={catalog} />
       ) : (
-        // Hairlines drawn per tile (right and bottom edges), so a short last row leaves no grey block.
-        <ul className="grid border-t border-l sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {page.items.map((item) => (
-            <li key={item.project.id} className="border-r border-b">
+            <li key={item.project.id}>
               <ProjectCard item={item} catalog={catalog} />
             </li>
           ))}

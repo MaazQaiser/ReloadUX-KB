@@ -96,7 +96,7 @@ export function LibraryHealthSection({ health, ask }: { health: LibraryHealth; a
         ].map(([label, value]) => (
           <div key={label} className="flex flex-col gap-1 border-r border-b p-5">
             <dt className="text-sm text-muted-foreground">{label}</dt>
-            <dd className="font-heading text-4xl">{value}</dd>
+            <dd className="font-heading text-4xl font-bold tracking-[-0.02em] tabular-nums">{value}</dd>
           </div>
         ))}
       </dl>
@@ -107,7 +107,7 @@ export function LibraryHealthSection({ health, ask }: { health: LibraryHealth; a
             {ask.weekly.map((week) => (
               <li key={week.week.toISOString()} className="flex flex-1 flex-col items-center gap-1">
                 <span className="text-xs text-soft-foreground">{week.count}</span>
-                <span className="w-full bg-foreground" style={{ height: `${(week.count / peak) * 96}px` }} aria-hidden />
+                <span className="w-full max-w-10 rounded-t-md bg-foreground" style={{ height: `${(week.count / peak) * 96}px` }} aria-hidden />
                 <span className="sr-only">
                   Week of {formatDate(week.week)}: {week.count} questions
                 </span>

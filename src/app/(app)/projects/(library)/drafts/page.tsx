@@ -50,7 +50,7 @@ async function DraftsView() {
                     <p className="text-xs tracking-[0.08em] text-muted-foreground uppercase">
                       {tagLabel(catalog.industry, draft.industry)} · {score}% complete · updated {formatDate(draft.updated_at)}
                     </p>
-                    <h3 className="font-heading text-2xl">{draft.name}</h3>
+                    <h3 className="text-lg font-medium">{draft.name}</h3>
                     <p className="max-w-2xl text-soft-foreground">{draft.summary}</p>
                   </div>
                   <div className="flex shrink-0 items-start gap-3">
