@@ -5,15 +5,14 @@ import { usePathname } from "next/navigation";
 import type { NavItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
-
 function NavAnchor({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "px-1 py-1 text-sm text-soft-foreground underline-offset-8 transition-[color,opacity] hover:text-foreground hover:opacity-70",
-        active && "text-foreground underline decoration-1",
+        "shrink-0 rounded-full px-3 py-1.5 text-sm text-foreground/60 transition-colors duration-200 outline-none hover:text-foreground focus-visible:ring-4 focus-visible:ring-ring/15",
+        active && "bg-muted font-medium text-foreground",
       )}
     >
       {item.label}

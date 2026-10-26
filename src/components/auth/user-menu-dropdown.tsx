@@ -29,7 +29,7 @@ export function UserMenuDropdown({ user }: { user: MenuUser }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="flex items-center gap-3 py-1 pr-1 pl-1 text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="flex items-center gap-3 rounded-full py-1 pr-2.5 pl-1 text-left transition-colors duration-300 outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/15 aria-expanded:bg-muted"
           aria-label={`Account menu for ${user.name}`}
         >
           <UserAvatar name={user.name} photoUrl={user.photoUrl} />
