@@ -1,6 +1,6 @@
 import { parseArgs } from "node:util";
 import { closeMongoClient, getDb } from "@/server/db/client";
-import { syncIndexes } from "@/server/db/indexes";
+import { syncIndexes, syncSearchIndexes } from "@/server/db/indexes";
 import { logger } from "@/server/logger";
 
 async function main(): Promise<number> {
@@ -8,8 +8,15 @@ async function main(): Promise<number> {
   const dryRun = values["dry-run"];
   const log = logger.child({ script: "create-indexes", dryRun });
 
-  const results = await syncIndexes(await getDb(), { dryRun });
+  const db = await getDb();
+  const results = await syncIndexes(db, { dryRun });
   for (const result of results) log.info("index", { ...result });
+
+  for (const result of await syncSearchIndexes(db, { dryRun })) {
+    if (result.action === "unsupported") {
+      log.warn("search index skipped: this database isn't Atlas, so search uses its in-app fallback", { ...result });
+    } else log.info("search index", { ...result });
+  }
 
   const conflicts = results.filter((result) => result.action === "conflict");
   if (conflicts.length > 0) {

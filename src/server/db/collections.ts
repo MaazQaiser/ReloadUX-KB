@@ -10,6 +10,7 @@ export const COLLECTIONS = {
   verifiedAnswers: "verified_answers",
   visuals: "visuals",
   tagValues: "tag_values",
+  projectChunks: "project_chunks",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

@@ -2,6 +2,7 @@ import "server-only";
 import { getCompleteness, type Completeness } from "@/lib/completeness";
 import { buildSearchText } from "@/lib/search-text";
 import { logger } from "@/server/logger";
+import { indexProject } from "@/server/services/project-index";
 import { getTagCatalog, unknownTags } from "@/server/services/tags";
 import { err, ok, toValidationIssues, type Result, type ValidationIssue } from "@/lib/result";
 import type { Actor } from "@/schemas/common";
@@ -25,6 +26,12 @@ import {
 export type SaveProjectError =
   | { kind: "invalid"; issues: ValidationIssue[] }
   | { kind: "unknown_people"; ids: string[] };
+
+/** search_text is written with the record; chunks and embeddings follow straight after (SPEC: one save path). */
+async function afterSave(project: Project): Promise<Project> {
+  await indexProject(project, await getTagCatalog());
+  return project;
+}
 
 interface PreparedProject {
   fields: ProjectFields;
@@ -69,7 +76,7 @@ export async function saveProject(
 ): Promise<Result<Project, SaveProjectError>> {
   const prepared = await prepareProject(input);
   if (!prepared.ok) return prepared;
-  return ok(await upsertProjectBySlug(prepared.value.fields, { ...options, searchText: prepared.value.searchText }));
+  return ok(await afterSave(await upsertProjectBySlug(prepared.value.fields, { ...options, searchText: prepared.value.searchText })));
 }
 
 export type CreateProjectError = SaveProjectError | { kind: "slug_taken"; slug: string };
@@ -81,7 +88,7 @@ export async function createProject(input: ProjectInput, actor: Actor): Promise<
 
   const { fields, searchText } = prepared.value;
   const created = await insertProject(fields, { actor, reviewStatus: "approved", searchText });
-  return created ? ok(created) : err({ kind: "slug_taken", slug: fields.slug });
+  return created ? ok(await afterSave(created)) : err({ kind: "slug_taken", slug: fields.slug });
 }
 
 export type UpdateProjectError = SaveProjectError | { kind: "not_found" };
@@ -97,7 +104,7 @@ export async function updateProject(
 
   const { fields, searchText } = prepared.value;
   const updated = await updateProjectById(id, fields, { actor, reviewStatus: "approved", searchText });
-  return updated ? ok(updated) : err({ kind: "not_found" });
+  return updated ? ok(await afterSave(updated)) : err({ kind: "not_found" });
 }
 
 /** A project for the edit form, drafts included. */

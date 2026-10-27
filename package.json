@@ -13,6 +13,7 @@
     "db:indexes": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/create-indexes.ts",
     "db:local": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/db-local.ts",
     "db:seed": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed/index.ts",
+    "db:embed": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/embed-projects.ts",
     "e2e:server": "tsx --conditions=react-server scripts/e2e-server.ts",
     "auth:emulator": "tsx scripts/auth-emulator.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test"

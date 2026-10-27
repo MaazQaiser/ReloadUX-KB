@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { getDb } from "@/server/db/client";
 import { COLLECTIONS } from "@/server/db/collections";
-import { INDEXES, syncIndexes, type IndexDefinition } from "@/server/db/indexes";
+import { INDEXES, syncIndexes, syncSearchIndexes, type IndexDefinition } from "@/server/db/indexes";
 
 async function indexNames(collection: string): Promise<string[]> {
   const db = await getDb();
@@ -25,6 +25,12 @@ describe("getDb", () => {
     const [first, second] = await Promise.all([getDb(), getDb()]);
     expect(first.client).toBe(second.client);
   });
+
+  it("reports Atlas search indexes as unsupported on plain MongoDB instead of failing", async () => {
+    expect(await syncSearchIndexes(await getDb(), { dryRun: false })).toEqual([
+      { collection: "project_chunks", name: "chunk_embedding", action: "unsupported" },
+    ]);
+  });
 });
 
 describe("syncIndexes", () => {
@@ -34,7 +40,7 @@ describe("syncIndexes", () => {
 
     expect(results.every((result) => result.action === "create")).toBe(true);
     expect(results).toHaveLength(INDEXES.length);
-    expect(await indexNames(COLLECTIONS.projects)).toEqual(["_id_", "slug_unique"]);
+    expect(await indexNames(COLLECTIONS.projects)).toEqual(["_id_", "search_text", "slug_unique"]);
     expect(await indexNames(COLLECTIONS.users)).toEqual(["_id_", "email_unique", "firebase_uid_unique"]);
   });
 
@@ -70,7 +76,10 @@ describe("syncIndexes", () => {
 
     const results = await syncIndexes(db, { dryRun: false, definitions });
 
-    expect(results).toEqual([{ collection: "projects", name: "slug_unique", action: "conflict" }]);
+    expect(results).toEqual([
+      { collection: "projects", name: "slug_unique", action: "conflict" },
+      { collection: "projects", name: "search_text", action: "create" },
+    ]);
     const existing = await db.collection(COLLECTIONS.projects).listIndexes().toArray();
     expect(existing.find((index) => index.name === "slug_unique")?.unique).toBeUndefined();
   });
