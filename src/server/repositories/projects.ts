@@ -21,7 +21,8 @@ const OPTIONAL_FIELDS = Object.entries(projectInputSchema.shape)
   .filter(([, schema]) => schema instanceof z.ZodOptional)
   .map(([key]) => key);
 
-async function projects() {
+/** Shared with project-search.ts, which keeps search queries out of this file. */
+export async function projectsCollection() {
   return (await getDb()).collection(COLLECTIONS.projects);
 }
 
@@ -40,7 +41,7 @@ function idToString(value: unknown): unknown {
   return value instanceof ObjectId ? value.toHexString() : value;
 }
 
-function toProject(document: WithId<Document>): Project {
+export function toProject(document: WithId<Document>): Project {
   return fromDocument(projectSchema, COLLECTIONS.projects, {
     ...document,
     lead_designer: idToString(document.lead_designer),
@@ -84,7 +85,7 @@ function withUnset({ $set, $unset }: { $set: Document; $unset: Record<string, ""
 /** Creates or updates the project with this slug, so seeds and imports can run twice. */
 export async function upsertProjectBySlug(input: ProjectInput, options: ProjectWriteOptions): Promise<Project> {
   const write = toProjectWrite(input, options);
-  const saved = await (await projects()).findOneAndUpdate({ slug: write.slug }, withUnset(write), {
+  const saved = await (await projectsCollection()).findOneAndUpdate({ slug: write.slug }, withUnset(write), {
     upsert: true,
     returnDocument: "after",
   });
@@ -103,7 +104,7 @@ export async function insertProject(input: ProjectInput, options: ProjectWriteOp
   const { $set } = toProjectWrite(input, options);
   try {
     const document = { ...$set, visuals: [] };
-    const { insertedId } = await (await projects()).insertOne(document);
+    const { insertedId } = await (await projectsCollection()).insertOne(document);
     return toProject({ _id: insertedId, ...document });
   } catch (error) {
     if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) return null;
@@ -118,7 +119,7 @@ export async function updateProjectById(
   options: ProjectWriteOptions,
 ): Promise<Project | null> {
   const write = toProjectWrite(input, options);
-  const saved = await (await projects()).findOneAndUpdate(
+  const saved = await (await projectsCollection()).findOneAndUpdate(
     { _id: toObjectId(id), slug: write.slug, deleted_at: { $exists: false } },
     withUnset(write),
     { returnDocument: "after" },
@@ -132,18 +133,19 @@ export async function findProjectBySlug(
   { includeDrafts = false }: { includeDrafts?: boolean } = {},
 ): Promise<Project | null> {
   const filter = includeDrafts ? { slug, deleted_at: { $exists: false } } : { slug, ...VISIBLE };
-  const document = await (await projects()).findOne(filter);
+  const document = await (await projectsCollection()).findOne(filter);
   return document ? toProject(document) : null;
 }
 
 /** Several visible projects at once, for lookups keyed by slug (answer cards). Order isn't kept. */
 export async function findVisibleProjectsBySlugs(slugs: readonly string[]): Promise<Project[]> {
   if (slugs.length === 0) return [];
-  const documents = await (await projects()).find({ slug: { $in: [...slugs] }, ...VISIBLE }).toArray();
+  const documents = await (await projectsCollection()).find({ slug: { $in: [...slugs] }, ...VISIBLE }).toArray();
   return documents.map(toProject);
 }
 
-function toQuery(filters: ProjectFilters): Filter<Document> {
+/** Visible projects matching the filters, as a MongoDB query. */
+export function toQuery(filters: ProjectFilters): Filter<Document> {
   const conditions: Filter<Document>[] = [VISIBLE];
 
   if (filters.q) {
@@ -175,7 +177,7 @@ export interface ProjectPage {
 
 /** Newest deliveries first; undated projects (often ongoing) last, then by name. */
 export async function listProjects(filters: ProjectFilters, { page, page_size }: Pagination): Promise<ProjectPage> {
-  const collection = await projects();
+  const collection = await projectsCollection();
   const query = toQuery(filters);
 
   const [documents, total] = await Promise.all([
@@ -197,14 +199,14 @@ export async function listProjects(filters: ProjectFilters, { page, page_size }:
  * Fine at this library's size (100s of projects); revisit past a few thousand.
  */
 export async function listAllMatchingProjects(filters: ProjectFilters): Promise<Project[]> {
-  const documents = await (await projects()).find(toQuery(filters)).sort({ name: 1 }).collation({ locale: "en", strength: 2 }).toArray();
+  const documents = await (await projectsCollection()).find(toQuery(filters)).sort({ name: 1 }).collation({ locale: "en", strength: 2 }).toArray();
   return documents.map(toProject);
 }
 
 /** Soft delete: the record stays for audit and undo, but nothing lists or opens it. Null if already gone. */
 export async function softDeleteProjectById(id: string, actor: Actor): Promise<Project | null> {
   const now = new Date();
-  const saved = await (await projects()).findOneAndUpdate(
+  const saved = await (await projectsCollection()).findOneAndUpdate(
     { _id: toObjectId(id), deleted_at: { $exists: false } },
     { $set: { deleted_at: now, updated_by: actorSchema.parse(actor), updated_at: now } },
     { returnDocument: "after" },
@@ -214,7 +216,7 @@ export async function softDeleteProjectById(id: string, actor: Actor): Promise<P
 
 /** Delivery years that have at least one visible project, newest first, for the year filter. */
 export async function listDeliveryYears(): Promise<number[]> {
-  const rows = await (await projects())
+  const rows = await (await projectsCollection())
     .aggregate<{ _id: number }>([
       { $match: { ...VISIBLE, delivery_date: { $type: "date" } } },
       { $group: { _id: { $year: "$delivery_date" } } },
@@ -226,7 +228,7 @@ export async function listDeliveryYears(): Promise<number[]> {
 
 /** Drafts waiting for review (migration, admin chat), oldest first so nothing waits forever. */
 export async function listDraftProjects(): Promise<Project[]> {
-  const documents = await (await projects())
+  const documents = await (await projectsCollection())
     .find(LIVE_DRAFT)
     .sort({ updated_at: 1 })
     .toArray();
@@ -235,7 +237,7 @@ export async function listDraftProjects(): Promise<Project[]> {
 
 /** Approves a draft as it stands; null if it isn't a live draft any more. */
 export async function approveProjectById(id: string, actor: Actor): Promise<Project | null> {
-  const saved = await (await projects()).findOneAndUpdate(
+  const saved = await (await projectsCollection()).findOneAndUpdate(
     { _id: toObjectId(id), review_status: "draft", deleted_at: { $exists: false } },
     { $set: { review_status: "approved", updated_by: actorSchema.parse(actor), updated_at: new Date() } },
     { returnDocument: "after" },
@@ -245,13 +247,13 @@ export async function approveProjectById(id: string, actor: Actor): Promise<Proj
 
 /** Every visible project, for analytics over the whole library (100s, not 1000s, of records). */
 export async function listAllVisibleProjects(): Promise<Project[]> {
-  const documents = await (await projects()).find(VISIBLE).toArray();
+  const documents = await (await projectsCollection()).find(VISIBLE).toArray();
   return documents.map(toProject);
 }
 
 /** Keeps the project's visuals list in step with the visuals collection. */
 export async function setProjectVisualMembership(projectId: string, visualId: string, member: boolean): Promise<void> {
-  const collection = await projects();
+  const collection = await projectsCollection();
   const filter = { _id: toObjectId(projectId) };
   const visual = toObjectId(visualId);
   if (member) await collection.updateOne(filter, { $addToSet: { visuals: visual } });
