@@ -35,6 +35,10 @@ export const AI_CONFIG = {
     topK: 5,
     /** Candidates gathered from vector and keyword search before reranking. */
     candidates: 30,
+    /** How close a question must be to an approved one for its verified answer to be offered. */
+    verifiedAnswerSimilarity: 0.82,
+    /** The same bar by shared words, used when Voyage isn't connected. */
+    verifiedAnswerOverlap: 0.6,
   },
   chunks: {
     /** About 300 to 800 tokens per chunk (SPEC.md), measured in characters at ~4 per token. */

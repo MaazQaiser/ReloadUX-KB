@@ -2,6 +2,7 @@ import "server-only";
 import { MongoServerError } from "mongodb";
 import { z } from "zod";
 import type { ChunkField } from "@/lib/chunks";
+import { cosineSimilarity } from "@/lib/vector";
 import { getDb } from "@/server/db/client";
 import { COLLECTIONS } from "@/server/db/collections";
 import { CHUNK_VECTOR_INDEX } from "@/server/db/indexes";
@@ -66,20 +67,6 @@ const storedSchema = matchSchema.omit({ score: true }).extend({ embedding: z.arr
 const VECTOR_SEARCH_UNAVAILABLE = new Set([40324, 31082, 6047401]);
 let warnedFallback = false;
 
-function cosine(a: readonly number[], b: readonly number[]): number {
-  let dot = 0;
-  let normA = 0;
-  let normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    const x = a[i] ?? 0;
-    const y = b[i] ?? 0;
-    dot += x * y;
-    normA += x * x;
-    normB += y * y;
-  }
-  return normA === 0 || normB === 0 ? 0 : dot / Math.sqrt(normA * normB);
-}
-
 /** Similarity across every chunk in memory. Fine for a few thousand chunks; Atlas does it properly. */
 async function similarChunksInApp(vector: readonly number[], limit: number): Promise<ChunkMatch[]> {
   const documents = await (await chunks()).find({}, { projection: { _id: 0, project_id: 1, field: 1, text: 1, embedding: 1 } }).toArray();
@@ -88,7 +75,7 @@ async function similarChunksInApp(vector: readonly number[], limit: number): Pro
       const parsed = storedSchema.safeParse(document);
       if (!parsed.success) return [];
       const { project_id, field, text, embedding } = parsed.data;
-      return [{ projectId: project_id, field, text, score: cosine(vector, embedding) }];
+      return [{ projectId: project_id, field, text, score: cosineSimilarity(vector, embedding) }];
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
