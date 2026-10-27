@@ -138,6 +138,14 @@ export const STARTER_QUESTIONS: readonly string[] = [
 
 /** Long enough for a pasted brief, short enough to keep a single turn cheap. */
 export const MAX_QUESTION_LENGTH = 1000;
+
+/** Questions one person can ask per minute (CLAUDE.md: rate limit the agent per user). */
+export const ASK_RATE_LIMIT = { perMinute: 12 } as const;
+
+/** Earlier turns sent with a question so follow-ups like "who designed it?" make sense. */
+export const MAX_HISTORY_TURNS = 4;
+/** An earlier answer is trimmed to this before it's sent back as context. */
+export const MAX_HISTORY_ANSWER_LENGTH = 4000;
 export const MAX_FEEDBACK_NOTE_LENGTH = 1000;
 
 /**

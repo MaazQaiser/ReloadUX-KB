@@ -1,4 +1,5 @@
 import "server-only";
+import { MAX_HISTORY_TURNS } from "@/lib/constants";
 
 /**
  * Every model name and limit the agent and search use, in one place
@@ -15,7 +16,7 @@ export const AI_CONFIG = {
     /** Wall-clock budget for one question, tools included. */
     timeoutMs: 60_000,
     /** Earlier turns sent with a follow-up question, newest last. */
-    historyTurns: 4,
+    historyTurns: MAX_HISTORY_TURNS,
     /** Re-runs a safety decline on Anthropic's recommended model instead of failing the answer. */
     fallbackBeta: "server-side-fallback-2026-07-01",
     maxRetries: 3,

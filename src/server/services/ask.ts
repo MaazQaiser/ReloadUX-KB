@@ -5,6 +5,9 @@ import { PREVIEW_ANSWERS, PREVIEW_FALLBACK } from "@/server/fixtures/answers";
 import { logger } from "@/server/logger";
 import { insertConversation, setConversationFeedback } from "@/server/repositories/conversations";
 import { insertGap } from "@/server/repositories/knowledge-gaps";
+import { getClaude } from "@/server/ai/claude";
+import type { HistoryTurn } from "@/server/agent/loop";
+import { streamAgentAnswer, toDeltas } from "@/server/services/agent-answer";
 import { getCoverUrls } from "@/server/services/visuals";
 
 const log = logger.child({ module: "ask" });
@@ -13,16 +16,15 @@ export interface StreamOptions {
   /** Pause between streamed words, so the preview feels like the real agent. Tests pass 0. */
   delayMs?: number;
   signal?: AbortSignal;
+  /** Earlier turns of the conversation, for follow-up questions. */
+  history?: readonly HistoryTurn[];
 }
 
 const PREVIEW_DELAY_MS = 30;
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Splits text into word-sized deltas, keeping the spaces, so joined deltas equal the text. */
-export function toDeltas(text: string): string[] {
-  return text.match(/\S+\s*/g) ?? [];
-}
+export { toDeltas };
 
 function pickPreviewAnswer(question: string) {
   const lower = question.toLowerCase();
@@ -44,14 +46,21 @@ async function withCovers(projects: AnswerProject[], turnId: string): Promise<An
 }
 
 /**
- * Answers one question as a stream of events. Until the agent lands in phase 3
- * this replays canned preview answers; the event shape is what the agent will emit.
+ * Answers one question as a stream of events: by the agent when Claude is
+ * connected, otherwise by replaying canned preview answers (development
+ * without keys, e2e). Both emit the same events.
  */
 export async function* streamAnswer(
   question: string,
   user: User,
-  { delayMs = PREVIEW_DELAY_MS, signal }: StreamOptions = {},
+  { delayMs = PREVIEW_DELAY_MS, signal, history = [] }: StreamOptions = {},
 ): AsyncGenerator<AskEvent> {
+  const claude = getClaude();
+  if (claude) {
+    yield* streamAgentAnswer(claude, question, history, user, signal);
+    return;
+  }
+
   const turnId = crypto.randomUUID();
   const startedAt = Date.now();
   log.info("ask turn started", { turnId, userId: user.id, preview: true });

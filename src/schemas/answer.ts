@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ANSWER_VERDICT, MAX_FEEDBACK_NOTE_LENGTH, MAX_QUESTION_LENGTH } from "@/lib/constants";
+import { ANSWER_VERDICT, MAX_FEEDBACK_NOTE_LENGTH, MAX_HISTORY_ANSWER_LENGTH, MAX_HISTORY_TURNS, MAX_QUESTION_LENGTH } from "@/lib/constants";
 import { linkSchema, shortTextSchema, slugSchema } from "./common";
 import { industrySchema, productTypeSchema } from "./tags";
 
@@ -7,6 +7,11 @@ export const answerVerdictSchema = z.enum(ANSWER_VERDICT.keys);
 
 export const askRequestSchema = z.object({
   question: z.string().trim().min(1, "Type a question first.").max(MAX_QUESTION_LENGTH),
+  /** Earlier turns of this conversation, oldest first, so follow-up questions can refer back. */
+  history: z
+    .array(z.object({ question: z.string().trim().min(1).max(MAX_QUESTION_LENGTH), answer: z.string().trim().min(1).max(MAX_HISTORY_ANSWER_LENGTH) }))
+    .max(MAX_HISTORY_TURNS)
+    .default([]),
 });
 
 /** A project card in an answer: enough to judge the match without opening the record. */
