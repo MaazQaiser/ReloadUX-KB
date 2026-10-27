@@ -16,7 +16,7 @@ import { applySuggestion } from "@/lib/fill-from-text";
 import { tagOptions as catalogOptions, type TagCatalog } from "@/lib/tag-catalog";
 import { toSlug } from "@/lib/slug";
 import type { LinkField, ProjectFormValues } from "@/schemas/project-form";
-import { ChipGroup, fieldId, SelectField, TextAreaField, TextField } from "./fields";
+import { ChipGroup, FieldIds, SelectField, TextAreaField, TextField, useFieldId } from "./fields";
 import { FillFromText } from "./fill-from-text";
 import { PeopleFields } from "./people-fields";
 import { RowList } from "./row-list";
@@ -43,12 +43,21 @@ type FormProps =
   | { mode: "edit"; initial: ProjectFormValues; people: FormPerson[]; catalog: TagCatalog; project: { id: string; slug: string } };
 
 export function ProjectForm(props: FormProps) {
+  return (
+    <FieldIds>
+      <ProjectFormFields {...props} />
+    </FieldIds>
+  );
+}
+
+function ProjectFormFields(props: FormProps) {
   const router = useRouter();
   const [values, setValues] = useState(props.initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const summaryRef = useRef<HTMLDivElement>(null);
+  const idFor = useFieldId();
 
   function set<K extends keyof ProjectFormValues>(key: K, value: ProjectFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -91,7 +100,7 @@ export function ProjectForm(props: FormProps) {
             <ul className="mt-2 list-disc pl-5">
               {errorList.map(([path, error]) => (
                 <li key={path}>
-                  <a href={`#${fieldId(path)}`} className="underline underline-offset-4">
+                  <a href={`#${idFor(path)}`} className="underline underline-offset-4">
                     {path.replace(/[._]/g, " ")}: {error}
                   </a>
                 </li>
@@ -119,8 +128,8 @@ export function ProjectForm(props: FormProps) {
           <SelectField path="status" label="Status" required value={values.status} onChange={(value) => set("status", value as ProjectFormValues["status"])} options={PROJECT_STATUS.keys.map((key) => ({ value: key, label: PROJECT_STATUS.labels[key] }))} error={errors.status} />
           <TextField path="country" label="Country" value={values.country} onChange={(value) => set("country", value)} error={errors.country} />
           <div className="flex items-center gap-2 pt-6">
-            <input id={fieldId("nda")} type="checkbox" checked={values.nda} onChange={(event) => set("nda", event.target.checked)} className="size-4 accent-foreground" />
-            <Label htmlFor={fieldId("nda")}>Under NDA (use the client-safe summary outside the team)</Label>
+            <input id={idFor("nda")} type="checkbox" checked={values.nda} onChange={(event) => set("nda", event.target.checked)} className="size-4 accent-foreground" />
+            <Label htmlFor={idFor("nda")}>Under NDA (use the client-safe summary outside the team)</Label>
           </div>
         </div>
       </Section>

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { countSuggested, MAX_FILL_TEXT_LENGTH, suggestFromText, type FillSuggestion } from "@/lib/fill-from-text";
 import type { TagCatalog } from "@/lib/tag-catalog";
+import { useFieldId } from "./fields";
 
 /**
  * Paste a brief, proposal or case study to pre-fill the form for review.
@@ -17,6 +18,7 @@ import type { TagCatalog } from "@/lib/tag-catalog";
 export function FillFromText({ catalog, onApply }: { catalog: TagCatalog; onApply: (suggestion: FillSuggestion) => void }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
+  const textId = useFieldId()("fill-from-text");
   const [result, setResult] = useState<string | null>(null);
 
   function fill() {
@@ -55,9 +57,9 @@ export function FillFromText({ catalog, onApply }: { catalog: TagCatalog; onAppl
 
       {open && (
         <div className="flex flex-col gap-3">
-          <Label htmlFor="fill-from-text">Text to read</Label>
+          <Label htmlFor={textId}>Text to read</Label>
           <Textarea
-            id="fill-from-text"
+            id={textId}
             value={text}
             onChange={(event) => setText(event.target.value)}
             maxLength={MAX_FILL_TEXT_LENGTH}

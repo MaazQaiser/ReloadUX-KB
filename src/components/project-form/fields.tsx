@@ -1,21 +1,32 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { createContext, use, useId, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-/** Stable DOM id for a form path such as "figma_files.0.url". */
-export function fieldId(path: string): string {
-  return `field-${path.replace(/\./g, "-")}`;
+// Next keeps recently visited pages mounted but hidden, so the add and edit forms
+// can both be in the document; a prefix per form keeps their ids, and labels, apart.
+const FieldIdPrefix = createContext("field");
+
+/** Gives the fields inside it ids no other form on the page uses. */
+export function FieldIds({ children }: { children: ReactNode }) {
+  return <FieldIdPrefix value={`field${useId()}`}>{children}</FieldIdPrefix>;
+}
+
+/** Stable DOM id for a form path such as "figma_files.0.url", unique to the form it's in. */
+export function useFieldId(): (path: string) => string {
+  const prefix = use(FieldIdPrefix);
+  return (path) => `${prefix}-${path.replace(/\./g, "-")}`;
 }
 
 export function FieldError({ path, error }: { path: string; error?: string }) {
+  const idFor = useFieldId();
   if (!error) return null;
   return (
-    <p id={`${fieldId(path)}-error`} className="text-sm text-destructive">
+    <p id={`${idFor(path)}-error`} className="text-sm text-destructive">
       {error}
     </p>
   );
@@ -29,21 +40,22 @@ interface FieldProps {
   required?: boolean;
 }
 
-function describedBy(path: string, error?: string, hint?: string) {
-  const ids = [error && `${fieldId(path)}-error`, hint && `${fieldId(path)}-hint`].filter(Boolean);
+function describedBy(id: string, error?: string, hint?: string) {
+  const ids = [error && `${id}-error`, hint && `${id}-hint`].filter(Boolean);
   return ids.length > 0 ? ids.join(" ") : undefined;
 }
 
 function FieldShell({ path, label, error, hint, required, children }: FieldProps & { children: ReactNode }) {
+  const idFor = useFieldId();
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={fieldId(path)}>
+      <Label htmlFor={idFor(path)}>
         {label}
         {required && <span aria-hidden="true"> *</span>}
       </Label>
       {children}
       {hint && (
-        <p id={`${fieldId(path)}-hint`} className="text-xs text-muted-foreground">
+        <p id={`${idFor(path)}-hint`} className="text-xs text-muted-foreground">
           {hint}
         </p>
       )}
@@ -58,16 +70,17 @@ export function TextField({
   type = "text",
   ...field
 }: FieldProps & { value: string; onChange: (value: string) => void; type?: "text" | "date" | "number" | "url" }) {
+  const id = useFieldId()(field.path);
   return (
     <FieldShell {...field}>
       <Input
-        id={fieldId(field.path)}
+        id={id}
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required={field.required}
         aria-invalid={field.error ? true : undefined}
-        aria-describedby={describedBy(field.path, field.error, field.hint)}
+        aria-describedby={describedBy(id, field.error, field.hint)}
         {...(type === "number" && { min: 0, step: "0.5", inputMode: "decimal" as const })}
       />
     </FieldShell>
@@ -80,16 +93,17 @@ export function TextAreaField({
   rows = 4,
   ...field
 }: FieldProps & { value: string; onChange: (value: string) => void; rows?: number }) {
+  const id = useFieldId()(field.path);
   return (
     <FieldShell {...field}>
       <Textarea
-        id={fieldId(field.path)}
+        id={id}
         value={value}
         rows={rows}
         onChange={(event) => onChange(event.target.value)}
         required={field.required}
         aria-invalid={field.error ? true : undefined}
-        aria-describedby={describedBy(field.path, field.error, field.hint)}
+        aria-describedby={describedBy(id, field.error, field.hint)}
       />
     </FieldShell>
   );
@@ -107,15 +121,16 @@ export function SelectField({
   options: { value: string; label: string }[];
   placeholder?: string;
 }) {
+  const id = useFieldId()(field.path);
   return (
     <FieldShell {...field}>
       <NativeSelect
-        id={fieldId(field.path)}
+        id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required={field.required}
         aria-invalid={field.error ? true : undefined}
-        aria-describedby={describedBy(field.path, field.error, field.hint)}
+        aria-describedby={describedBy(id, field.error, field.hint)}
         className="w-full"
       >
         <NativeSelectOption value="">{placeholder}</NativeSelectOption>
@@ -151,12 +166,13 @@ export function ChipGroup<K extends string>({
   function toggle(value: K, checked: boolean) {
     onChange(checked ? [...selected, value] : selected.filter((item) => item !== value));
   }
+  const id = useFieldId()(path);
   return (
     <fieldset
-      id={fieldId(path)}
+      id={id}
       className="flex flex-col gap-2"
       aria-invalid={error ? true : undefined}
-      aria-describedby={error ? `${fieldId(path)}-error` : undefined}
+      aria-describedby={error ? `${id}-error` : undefined}
     >
       <legend className="mb-1.5 text-sm font-medium">
         {legend}

@@ -9,7 +9,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { PERSON_ROLE } from "@/lib/constants";
 import type { PersonRole } from "@/schemas/tags";
 import type { ProjectFormValues } from "@/schemas/project-form";
-import { ChipGroup, SelectField, TextField } from "./fields";
+import { ChipGroup, SelectField, TextField, useFieldId } from "./fields";
 
 type PeopleValues = Pick<
   ProjectFormValues,
@@ -28,6 +28,7 @@ function AddPerson({ onAdded }: { onAdded: (person: FormPerson, existed: boolean
   const [role, setRole] = useState<PersonRole>("designer");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const idFor = useFieldId();
 
   function add() {
     startTransition(async () => {
@@ -51,12 +52,12 @@ function AddPerson({ onAdded }: { onAdded: (person: FormPerson, existed: boolean
       <p className="text-sm font-medium">Someone missing? Add them here.</p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
-          <Label htmlFor="new-person-name">Name</Label>
-          <Input id="new-person-name" value={name} onChange={(event) => setName(event.target.value)} />
+          <Label htmlFor={idFor("new-person-name")}>Name</Label>
+          <Input id={idFor("new-person-name")} value={name} onChange={(event) => setName(event.target.value)} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="new-person-role">Role</Label>
-          <NativeSelect id="new-person-role" value={role} onChange={(event) => setRole(event.target.value as PersonRole)}>
+          <Label htmlFor={idFor("new-person-role")}>Role</Label>
+          <NativeSelect id={idFor("new-person-role")} value={role} onChange={(event) => setRole(event.target.value as PersonRole)}>
             {PERSON_ROLE.keys.map((key) => (
               <NativeSelectOption key={key} value={key}>
                 {PERSON_ROLE.labels[key]}

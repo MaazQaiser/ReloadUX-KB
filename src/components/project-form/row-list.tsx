@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FieldError, fieldId } from "./fields";
+import { FieldError, useFieldId } from "./fields";
 
 interface Column<K extends string> {
   key: K;
@@ -33,6 +33,7 @@ export function RowList<K extends string>({
   errors: Record<string, string>;
   addLabel: string;
 }) {
+  const idFor = useFieldId();
   const blank = Object.fromEntries(columns.map((column) => [column.key, ""])) as Record<K, string>;
 
   function update(index: number, key: K, value: string) {
@@ -47,19 +48,20 @@ export function RowList<K extends string>({
           {columns.map((column) => {
             const cellPath = `${path}.${index}.${column.key}`;
             const error = errors[cellPath];
+            const id = idFor(cellPath);
             return (
               <div key={column.key} className="flex flex-1 flex-col gap-1">
-                <Label htmlFor={fieldId(cellPath)} className="sr-only">
+                <Label htmlFor={id} className="sr-only">
                   {`${legend} ${index + 1} ${column.label}`}
                 </Label>
                 <Input
-                  id={fieldId(cellPath)}
+                  id={id}
                   type={column.type ?? "text"}
                   value={row[column.key]}
                   placeholder={column.placeholder ?? column.label}
                   onChange={(event) => update(index, column.key, event.target.value)}
                   aria-invalid={error ? true : undefined}
-                  aria-describedby={error ? `${fieldId(cellPath)}-error` : undefined}
+                  aria-describedby={error ? `${id}-error` : undefined}
                 />
                 <FieldError path={cellPath} error={error} />
               </div>
