@@ -63,7 +63,7 @@ describe("indexProject", () => {
 });
 
 describe("findSimilarChunks", () => {
-  it("ranks the closest chunks first, using the in-app fallback on plain MongoDB", async () => {
+  it("ranks the closest chunks first by cosine distance", async () => {
     const project = (await getProjectDetail("calmly-care"))!.project;
     await indexProject(project, builtInCatalog());
     const matches = await findSimilarChunks(topicVector("chatbot"), 3);

@@ -24,7 +24,7 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] }, dependencies: ["setup"] },
   ],
   webServer: {
-    // Seeded throwaway MongoDB, Firebase Auth Emulator, dev server (see scripts/e2e-server.ts).
+    // Seeded throwaway Postgres (PGlite), Firebase Auth Emulator, dev server (see scripts/e2e-server.ts).
     command: "pnpm -s e2e:server",
     url: `${baseURL}/login`,
     reuseExistingServer: false,

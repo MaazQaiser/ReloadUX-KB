@@ -7,12 +7,12 @@ test.use({ storageState: ADMIN.state });
 const uniqueName = (label: string) => `E2E ${label} ${Date.now().toString(36)}`;
 
 async function fillRequired(page: Page, name: string) {
-  await page.getByLabel("Project name", { exact: true }).fill(name);
-  await page.getByLabel("Industry", { exact: true }).selectOption("other");
-  await page.getByLabel("Status", { exact: true }).selectOption("delivered");
+  await page.getByRole("textbox", { name: "Project name", exact: true }).fill(name);
+  await page.getByRole("combobox", { name: "Industry", exact: true }).selectOption("other");
+  await page.getByRole("combobox", { name: "Status", exact: true }).selectOption("delivered");
   await page.getByRole("group", { name: "Product type" }).getByText("web app", { exact: true }).click();
-  await page.getByLabel("Lead designer", { exact: true }).selectOption({ label: "Sara Malik" });
-  await page.getByLabel("Summary", { exact: true }).fill("A project created by the end-to-end tests.");
+  await page.getByRole("combobox", { name: "Lead designer", exact: true }).selectOption({ label: "Sara Malik" });
+  await page.getByRole("textbox", { name: "Summary", exact: true }).fill("A project created by the end-to-end tests.");
 }
 
 test("an admin creates a project and lands on its page", async ({ page }) => {
@@ -42,9 +42,9 @@ test("missing required fields are reported next to each field", async ({ page })
   const summary = page.getByRole("alert").filter({ hasText: "Some fields need fixing." });
   await expect(summary).toBeVisible();
   await expect(summary).toBeFocused();
-  await expect(page.getByLabel("Project name", { exact: true })).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByLabel("Summary", { exact: true })).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByLabel("Lead designer", { exact: true })).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByRole("textbox", { name: "Project name", exact: true })).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByRole("textbox", { name: "Summary", exact: true })).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByRole("combobox", { name: "Lead designer", exact: true })).toHaveAttribute("aria-invalid", "true");
 });
 
 test("bad links and dates are rejected with field errors", async ({ page }) => {
@@ -58,7 +58,7 @@ test("bad links and dates are rejected with field errors", async ({ page }) => {
   await page.getByRole("button", { name: "Create project" }).click();
 
   await expect(page.getByLabel("Live links 1 URL")).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByText("delivery date can't be before the start date")).toBeVisible();
+  await expect(page.getByText("delivery date can't be before the start date", { exact: true })).toBeVisible();
 });
 
 test("a duplicate name is refused", async ({ page }) => {
@@ -79,9 +79,9 @@ test("an admin edits a project; its address stays the same", async ({ page }) =>
   const address = page.url();
 
   await page.getByRole("link", { name: "Edit project" }).click();
-  await expect(page.getByLabel("Project name", { exact: true })).toHaveValue(name);
-  await page.getByLabel("Project name", { exact: true }).fill(`${name} renamed`);
-  await page.getByLabel("Country", { exact: true }).fill("Pakistan");
+  await expect(page.getByRole("textbox", { name: "Project name", exact: true })).toHaveValue(name);
+  await page.getByRole("textbox", { name: "Project name", exact: true }).fill(`${name} renamed`);
+  await page.getByRole("textbox", { name: "Country", exact: true }).fill("Pakistan");
   await page.getByRole("button", { name: "Save changes" }).click();
 
   await expect(page.getByRole("heading", { level: 1, name: `${name} renamed` })).toBeVisible();
@@ -93,12 +93,12 @@ test("a person can be added inline and is selected", async ({ page }) => {
   const person = `Inline Person ${Date.now().toString(36)}`;
   await page.goto("/projects/new");
   await page.getByLabel("Name", { exact: true }).fill(person);
-  await page.getByRole("button", { name: "Add person" }).click();
+  await page.getByRole("button", { name: "Add person", exact: true }).click();
 
-  await expect(page.getByLabel("Lead designer", { exact: true })).toHaveValue(/^[a-f0-9]{24}$/);
-  await expect(page.getByLabel("Lead designer", { exact: true }).locator("option:checked")).toHaveText(person);
+  await expect(page.getByRole("combobox", { name: "Lead designer", exact: true })).toHaveValue(/^[a-f0-9]{24}$/);
+  await expect(page.getByRole("combobox", { name: "Lead designer", exact: true }).locator("option:checked")).toHaveText(person);
 
   await page.getByLabel("Name", { exact: true }).fill("sara malik");
-  await page.getByRole("button", { name: "Add person" }).click();
+  await page.getByRole("button", { name: "Add person", exact: true }).click();
   await expect(page.getByText("Sara Malik was already listed, so they're selected.")).toBeVisible();
 });

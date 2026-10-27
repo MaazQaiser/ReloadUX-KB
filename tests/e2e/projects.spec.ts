@@ -7,7 +7,7 @@ test.describe("projects grid", () => {
   test("lists every seeded project", async ({ page }) => {
     await page.goto("/projects");
 
-    await expect(page.getByRole("heading", { level: 1, name: "projects" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Everything we've built." })).toBeVisible();
     // Other specs add projects in parallel, so check the seeded ones rather than a count.
     for (const name of ["Calmly Care", "Ledgerly", "Questline", "Learnloop"]) {
       await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
@@ -68,7 +68,7 @@ test.describe("project detail", () => {
 
     await expect(page.getByRole("region", { name: "Timeline" }).getByText("14 Mar 2025")).toBeVisible();
     await expect(page.getByRole("link", { name: /Main file/ })).toHaveAttribute("target", "_blank");
-    await expect(page.getByRole("meter", { name: "Record completeness" })).toHaveAttribute("aria-valuenow", "83");
+    await expect(page.getByRole("meter", { name: "Record completeness" })).toHaveAttribute("aria-valuenow", "85");
   });
 
   test("marks missing fields as not recorded", async ({ page }) => {

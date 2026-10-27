@@ -19,7 +19,8 @@ test.describe("ask", () => {
 
     const answer = page.getByRole("region", { name: "Answer" });
     await expect(answer.getByText("Yes", { exact: true })).toBeVisible();
-    await expect(answer.getByRole("list", { name: "Matching projects" }).getByRole("link", { name: "Calmly Care" })).toBeVisible();
+    // Cards open the project in a side panel rather than linking away.
+    await expect(answer.getByRole("list", { name: "Matching projects" }).getByRole("button", { name: /^Calmly Care/ })).toBeVisible();
     await expect(answer.getByText("Records used:")).toBeVisible();
 
     await answer.getByRole("button", { name: "No, not useful" }).click();
