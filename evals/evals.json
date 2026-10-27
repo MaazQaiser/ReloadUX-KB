@@ -712,7 +712,9 @@
             "no account manager",
             "not on record",
             "doesn't have an account manager",
-            "does not have an account manager"
+            "does not have an account manager",
+            "doesn't list",
+            "does not list"
           ]
         ],
         "must_not_mention": [
