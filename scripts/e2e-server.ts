@@ -4,6 +4,7 @@ import { createConnection } from "node:net";
 import { resolve } from "node:path";
 import { closeDb } from "@/server/db/client";
 import { logger } from "@/server/logger";
+import { updateUserRole, upsertUserOnSignIn } from "@/server/repositories/users";
 import { EMULATOR_PROJECT_ID, startAuthEmulator } from "./auth-emulator";
 import { seedDatabase } from "./seed/run";
 
@@ -19,6 +20,8 @@ const PORT = "3100";
 const DATA_DIR = resolve(".data/e2e-pglite");
 const EMULATOR_HOST = "127.0.0.1:9199";
 export const E2E_ADMIN_EMAIL = "admin@reloadux.com";
+// New accounts wait for an admin's approval; these stand in for teammates already let in.
+const E2E_VIEWER_EMAILS = ["viewer@reloadux.com", "returning@reloadux.com", "leaving@reloadux.com"];
 const log = logger.child({ script: "e2e-server" });
 
 function waitForPort(host: string, port: number, timeoutMs: number): Promise<void> {
@@ -39,6 +42,17 @@ function waitForPort(host: string, port: number, timeoutMs: number): Promise<voi
   });
 }
 
+/** Sign-in matches by email, so the emulator account takes over this record and its role. */
+async function approveViewers() {
+  for (const email of E2E_VIEWER_EMAILS) {
+    const user = await upsertUserOnSignIn(
+      { firebase_uid: `e2e-${email}`, email, name: email.split("@")[0] ?? email },
+      { promoteToAdmin: false },
+    );
+    await updateUserRole(user.id, "viewer", "system:e2e");
+  }
+}
+
 async function main() {
   const children: ChildProcess[] = [];
   const shutdown = async (code: number) => {
@@ -51,6 +65,7 @@ async function main() {
   rmSync(DATA_DIR, { recursive: true, force: true });
   process.env.DATABASE_URL = `pglite:${DATA_DIR}`;
   await seedDatabase({ dryRun: false, log });
+  await approveViewers();
   await closeDb();
 
   const emulator = startAuthEmulator("firebase.e2e.json");

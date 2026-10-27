@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { expectSignedIn, signInThroughPopup, VIEWER } from "./helpers";
+import { expectSignedIn, signInThroughPopup, signOut, VIEWER } from "./helpers";
 
 test.describe("signed out", () => {
   test("is sent to sign in, then back to the page they asked for", async ({ page }) => {
@@ -11,9 +11,12 @@ test.describe("signed out", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Ledgerly" })).toBeVisible();
   });
 
-  test("can sign in with any Google account", async ({ page }) => {
+  test("can sign in with any Google account, then waits for approval", async ({ page }) => {
     await signInThroughPopup(page, "someone@gmail.com");
-    await expectSignedIn(page);
+    await expect(page).toHaveURL(/\/pending$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("You're signed in. An admin needs to let you in.");
+    await page.goto("/projects");
+    await expect(page).toHaveURL(/\/pending$/);
   });
 });
 
@@ -22,7 +25,7 @@ test.describe("signed in", () => {
     await signInThroughPopup(page, "leaving@reloadux.com");
     await expectSignedIn(page);
 
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await signOut(page);
     await expect(page).toHaveURL(/\/login$/);
     await page.goto("/projects");
     await expect(page).toHaveURL(/\/login/);
