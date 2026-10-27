@@ -6,7 +6,7 @@ import type { User } from "@/schemas/user";
 import { getDb } from "@/server/db/client";
 import { getImageStore } from "@/server/storage";
 import { getProjectDetail } from "@/server/services/projects";
-import { getProjectGallery, runVisualCommand, searchLibrary, uploadVisuals, editVisual } from "@/server/services/visuals";
+import { editVisual, getCoverUrls, getProjectGallery, runVisualCommand, searchLibrary, uploadVisuals } from "@/server/services/visuals";
 import { createLogger } from "@/server/logger";
 import { seedDatabase } from "../../scripts/seed/run";
 
@@ -66,6 +66,13 @@ describe("visuals", () => {
     await runVisualCommand(editor, first.id, "remove");
     expect((await getProjectGallery(projectId)).map((visual) => visual.id)).toEqual([second.id]);
     expect((await getProjectDetail("calmly-care"))?.project.visuals).toEqual([second.id]);
+  });
+
+  it("finds cover URLs by slug, skipping projects without a cover or that don't exist", async () => {
+    const [cover] = await getProjectGallery((await getProjectDetail("calmly-care"))!.project.id);
+    const urls = await getCoverUrls(["calmly-care", "ledgerly", "no-such-project"]);
+    expect([...urls]).toEqual([["calmly-care", cover?.url]]);
+    expect(await getCoverUrls([])).toEqual(new Map());
   });
 
   it("keeps screenshots when the project form is saved", async () => {

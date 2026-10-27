@@ -6,8 +6,14 @@ import type { Project } from "@/schemas/project";
 import type { Flow } from "@/schemas/tags";
 import type { User } from "@/schemas/user";
 import { visualEditSchema, type Visual } from "@/schemas/visual";
-import { findProjectBySlug, listAllVisibleProjects, setProjectVisualMembership } from "@/server/repositories/projects";
 import {
+  findProjectBySlug,
+  findVisibleProjectsBySlugs,
+  listAllVisibleProjects,
+  setProjectVisualMembership,
+} from "@/server/repositories/projects";
+import {
+  findCoverVisuals,
   findVisual,
   insertVisual,
   listProjectVisuals,
@@ -43,6 +49,18 @@ function toView(visual: Visual): VisualView {
 
 export async function getProjectGallery(projectId: string): Promise<VisualView[]> {
   return (await listProjectVisuals(projectId)).map(toView);
+}
+
+/** Cover image URLs for the given project slugs; projects without a cover are left out. */
+export async function getCoverUrls(slugs: readonly string[]): Promise<Map<string, string>> {
+  const projects = await findVisibleProjectsBySlugs(slugs);
+  const covers = await findCoverVisuals(projects.map((project) => project.id));
+  const urls = new Map<string, string>();
+  for (const project of projects) {
+    const cover = covers.get(project.id);
+    if (cover) urls.set(project.slug, getImageStore().url(cover.image_key));
+  }
+  return urls;
 }
 
 export async function searchLibrary(filters: { q?: string; flow?: Flow }) {

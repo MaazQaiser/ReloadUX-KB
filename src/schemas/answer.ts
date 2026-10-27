@@ -17,6 +17,8 @@ export const answerProjectSchema = z.object({
   product_types: z.array(productTypeSchema),
   why: shortTextSchema,
   links: z.array(linkSchema),
+  /** The project's cover screenshot: our own file route today, an https image host once R2 lands. */
+  cover_url: z.string().max(2000).regex(/^(\/(?!\/)|https:\/\/)/, "must be a site path or https URL").optional(),
 });
 
 /** A record the answer drew on, listed so people can click through and verify (answer rule 5). */

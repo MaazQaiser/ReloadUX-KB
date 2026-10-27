@@ -1,10 +1,11 @@
 import "server-only";
-import type { AnswerFeedback, AskEvent } from "@/schemas/answer";
+import type { AnswerFeedback, AnswerProject, AskEvent } from "@/schemas/answer";
 import type { User } from "@/schemas/user";
 import { PREVIEW_ANSWERS, PREVIEW_FALLBACK } from "@/server/fixtures/answers";
 import { logger } from "@/server/logger";
 import { insertConversation, setConversationFeedback } from "@/server/repositories/conversations";
 import { insertGap } from "@/server/repositories/knowledge-gaps";
+import { getCoverUrls } from "@/server/services/visuals";
 
 const log = logger.child({ module: "ask" });
 
@@ -28,6 +29,20 @@ function pickPreviewAnswer(question: string) {
   return PREVIEW_ANSWERS.find((answer) => answer.keywords.every((keyword) => lower.includes(keyword))) ?? PREVIEW_FALLBACK;
 }
 
+/** Adds each card's cover screenshot. A failed lookup costs the thumbnails, never the answer. */
+async function withCovers(projects: AnswerProject[], turnId: string): Promise<AnswerProject[]> {
+  try {
+    const covers = await getCoverUrls(projects.map((project) => project.slug));
+    return projects.map((project) => {
+      const cover = covers.get(project.slug);
+      return cover ? { ...project, cover_url: cover } : project;
+    });
+  } catch (error) {
+    log.warn("cover lookup failed; answering without thumbnails", { turnId, error });
+    return projects;
+  }
+}
+
 /**
  * Answers one question as a stream of events. Until the agent lands in phase 3
  * this replays canned preview answers; the event shape is what the agent will emit.
@@ -45,7 +60,8 @@ export async function* streamAnswer(
   await pause(delayMs * 10);
 
   const answer = pickPreviewAnswer(question);
-  yield { type: "answer", verdict: answer.verdict, projects: answer.projects, records: answer.records };
+  const projects = await withCovers(answer.projects, turnId);
+  yield { type: "answer", verdict: answer.verdict, projects, records: answer.records };
 
   for (const delta of toDeltas(answer.text)) {
     if (signal?.aborted) return;

@@ -3,10 +3,12 @@ import { askEventSchema, type AskEvent } from "@/schemas/answer";
 import type { User } from "@/schemas/user";
 import * as conversations from "@/server/repositories/conversations";
 import * as gaps from "@/server/repositories/knowledge-gaps";
+import * as visuals from "@/server/services/visuals";
 import { recordAnswerFeedback, streamAnswer, toDeltas } from "./ask";
 
 vi.mock("@/server/repositories/conversations");
 vi.mock("@/server/repositories/knowledge-gaps");
+vi.mock("@/server/services/visuals", () => ({ getCoverUrls: vi.fn(async () => new Map<string, string>()) }));
 
 vi.mock("@/server/logger", () => {
   const log = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), child: () => log };
@@ -40,6 +42,21 @@ describe("streamAnswer (preview)", () => {
     expect(events[1]).toMatchObject({ type: "answer", verdict: "yes", projects: [{ slug: "calmly-care" }] });
     expect(events.at(-1)).toMatchObject({ type: "done", preview: true });
     expect(textOf(events)).toContain("Calmly Care");
+  });
+
+  it("puts the project's cover screenshot on its card", async () => {
+    vi.mocked(visuals.getCoverUrls).mockResolvedValueOnce(new Map([["calmly-care", "/api/files/projects/calmly-care/cover.png"]]));
+    const events = await collect("Have we done a healthcare chatbot?");
+    expect(events[1]).toMatchObject({ type: "answer", projects: [{ slug: "calmly-care", cover_url: "/api/files/projects/calmly-care/cover.png" }] });
+  });
+
+  it("still answers, without thumbnails, when the cover lookup fails", async () => {
+    vi.mocked(visuals.getCoverUrls).mockRejectedValueOnce(new Error("database down"));
+    const events = await collect("Have we done a healthcare chatbot?");
+    const answer = events[1];
+    expect(answer).toMatchObject({ type: "answer", verdict: "yes" });
+    expect(answer?.type === "answer" && answer.projects[0]?.cover_url).toBeFalsy();
+    expect(events.at(-1)).toMatchObject({ type: "done" });
   });
 
   it("answers No with the closest match for something we haven't done", async () => {

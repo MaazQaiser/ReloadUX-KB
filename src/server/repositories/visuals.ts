@@ -44,6 +44,18 @@ export async function listProjectVisuals(projectId: string): Promise<Visual[]> {
   return documents.map(toVisual);
 }
 
+/** Each project's cover screenshot, by project id; projects without one are left out. */
+export async function findCoverVisuals(projectIds: readonly string[]): Promise<Map<string, Visual>> {
+  if (projectIds.length === 0) return new Map();
+  const documents = await (await visuals())
+    .find({ project_id: { $in: projectIds.map(toObjectId) }, is_cover: true, ...LIVE })
+    .toArray();
+  return new Map(documents.map((document) => {
+    const visual = toVisual(document);
+    return [visual.project_id, visual];
+  }));
+}
+
 export async function findVisual(id: string): Promise<Visual | null> {
   const document = await (await visuals()).findOne({ _id: toObjectId(id), ...LIVE });
   return document ? toVisual(document) : null;

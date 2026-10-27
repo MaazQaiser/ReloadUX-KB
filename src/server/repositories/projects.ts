@@ -136,6 +136,13 @@ export async function findProjectBySlug(
   return document ? toProject(document) : null;
 }
 
+/** Several visible projects at once, for lookups keyed by slug (answer cards). Order isn't kept. */
+export async function findVisibleProjectsBySlugs(slugs: readonly string[]): Promise<Project[]> {
+  if (slugs.length === 0) return [];
+  const documents = await (await projects()).find({ slug: { $in: [...slugs] }, ...VISIBLE }).toArray();
+  return documents.map(toProject);
+}
+
 function toQuery(filters: ProjectFilters): Filter<Document> {
   const conditions: Filter<Document>[] = [VISIBLE];
 

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MAX_QUESTION_LENGTH } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { AnswerTurn } from "./answer-turn";
+import { ProjectPanel } from "./project-panel";
 import { useAsk } from "./use-ask";
 
 /** `name` is the signed-in person's first name, for the welcome; it may be missing. */
@@ -16,6 +17,7 @@ export function AskChat({ starters, name }: { starters: readonly string[]; name?
   const { turns, ask, stop, busy } = useAsk();
   const [question, setQuestion] = useState("");
   const [focused, setFocused] = useState(false);
+  const [openProject, setOpenProject] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastState = turns.at(-1)?.state;
@@ -96,11 +98,13 @@ export function AskChat({ starters, name }: { starters: readonly string[]; name?
           <h1 className="sr-only">Ask about projects</h1>
           <ol className="flex flex-col gap-8" aria-label="Conversation">
             {turns.map((turn) => (
-              <AnswerTurn key={turn.key} turn={turn} />
+              <AnswerTurn key={turn.key} turn={turn} onOpenProject={setOpenProject} />
             ))}
           </ol>
         </>
       )}
+
+      <ProjectPanel slug={openProject} onClose={() => setOpenProject(null)} />
 
       <p role="status" className="sr-only">
         {lastState === "done" ? "Answer ready." : ""}

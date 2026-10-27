@@ -9,7 +9,7 @@ import { VerdictBadge } from "./verdict-badge";
 // Pulse rises each new turn 12px into place.
 const ENTER = "animate-in fade-in-0 slide-in-from-bottom-3 duration-350 ease-pulse motion-reduce:animate-none";
 
-export function AnswerTurn({ turn }: { turn: Turn }) {
+export function AnswerTurn({ turn, onOpenProject }: { turn: Turn; onOpenProject: (slug: string) => void }) {
   const streaming = turn.state === "streaming";
   const waiting = streaming && !turn.text && turn.projects.length === 0;
 
@@ -50,7 +50,7 @@ export function AnswerTurn({ turn }: { turn: Turn }) {
             <ul className="grid gap-4 sm:grid-cols-2" aria-label="Matching projects">
               {turn.projects.map((project) => (
                 <li key={project.slug}>
-                  <AnswerProjectCard project={project} />
+                  <AnswerProjectCard project={project} onOpen={onOpenProject} />
                 </li>
               ))}
             </ul>
