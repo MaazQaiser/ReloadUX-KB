@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AskChat } from "@/components/ask/ask-chat";
+import { getIntegrations } from "@/env";
 import { Skeleton } from "@/components/ui/skeleton";
 import { STARTER_QUESTIONS } from "@/lib/constants";
 import { requireRole } from "@/server/auth";
@@ -20,7 +21,8 @@ export default function HomePage() {
 
 async function SignedInHome() {
   const user = await requireRole("viewer");
-  return <AskChat starters={STARTER_QUESTIONS} name={firstName(user.name)} />;
+  // Without Claude the answers are canned, and the screen says so.
+  return <AskChat starters={STARTER_QUESTIONS} name={firstName(user.name)} preview={!getIntegrations().anthropic} />;
 }
 
 /** Names come from Google; an email address in its place isn't a name to greet. */

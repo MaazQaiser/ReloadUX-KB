@@ -12,8 +12,11 @@ import { AnswerTurn } from "./answer-turn";
 import { ProjectPanel } from "./project-panel";
 import { useAsk } from "./use-ask";
 
-/** `name` is the signed-in person's first name, for the welcome; it may be missing. */
-export function AskChat({ starters, name }: { starters: readonly string[]; name?: string }) {
+/**
+ * `name` is the signed-in person's first name, for the welcome; it may be missing.
+ * `preview` marks canned answers (no Claude key yet), so nobody trusts them.
+ */
+export function AskChat({ starters, name, preview }: { starters: readonly string[]; name?: string; preview: boolean }) {
   const { turns, ask, stop, busy } = useAsk();
   const [question, setQuestion] = useState("");
   const [focused, setFocused] = useState(false);
@@ -61,7 +64,7 @@ export function AskChat({ starters, name }: { starters: readonly string[]; name?
           className="flex flex-1 animate-in flex-col justify-center gap-10 py-6 duration-500 ease-pulse fade-in-0 slide-in-from-bottom-5 sm:py-12 motion-reduce:animate-none"
         >
           <div className="flex flex-col items-start gap-4">
-            <PreviewBadge />
+            {preview && <PreviewBadge />}
             <h1 id="ask-welcome" className="font-heading text-3xl leading-tight italic sm:text-4xl md:text-5xl">
               {name ? (
                 <>

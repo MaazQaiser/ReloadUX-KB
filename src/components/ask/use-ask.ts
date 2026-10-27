@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { readNdjson } from "@/lib/ndjson";
+import { MAX_HISTORY_ANSWER_LENGTH, MAX_HISTORY_TURNS } from "@/lib/constants";
 import { askEventSchema, type AnswerProject, type AnswerRecord, type AnswerVerdict } from "@/schemas/answer";
 
 export type TurnState = "streaming" | "done" | "stopped" | "error";
@@ -24,12 +25,26 @@ const HTTP_ERRORS: Record<number, string> = {
   401: "Your session has expired. Reload the page to sign in again.",
   403: "Your account can't ask questions. Ask an admin for access.",
   400: "That question couldn't be sent. Shorten it and try again.",
+  429: "You're asking faster than the assistant can keep up. Wait a minute and try again.",
 };
 const GENERIC_ERROR = "Something went wrong while answering. Try again in a moment.";
+
+/** The last few answered turns, so a follow-up like "who designed it?" can be understood. */
+export function historyFrom(turns: readonly Turn[]) {
+  return turns
+    .filter((turn) => turn.state === "done" && turn.text.trim())
+    .slice(-MAX_HISTORY_TURNS)
+    .map((turn) => ({ question: turn.question, answer: turn.text.slice(0, MAX_HISTORY_ANSWER_LENGTH) }));
+}
 
 /** Sends questions to /api/ask and folds the streamed events into a list of turns. */
 export function useAsk() {
   const [turns, setTurns] = useState<Turn[]>([]);
+  // Read inside ask() without making it change on every streamed word.
+  const turnsRef = useRef<Turn[]>([]);
+  useEffect(() => {
+    turnsRef.current = turns;
+  }, [turns]);
   const controllerRef = useRef<AbortController | null>(null);
 
   const update = useCallback((key: string, change: (turn: Turn) => Partial<Turn>) => {
@@ -50,7 +65,7 @@ export function useAsk() {
         const response = await fetch("/api/ask", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ question }),
+          body: JSON.stringify({ question, history: historyFrom(turnsRef.current) }),
           signal: controller.signal,
         });
         if (!response.ok || !response.body) {
