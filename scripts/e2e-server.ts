@@ -84,6 +84,9 @@ async function main() {
     FIREBASE_CLIENT_EMAIL: "",
     FIREBASE_PRIVATE_KEY: "",
     INITIAL_ADMIN_EMAILS: E2E_ADMIN_EMAIL,
+    // Preview answers, not the paid agent, whatever keys .env.local holds.
+    ANTHROPIC_API_KEY: "",
+    VOYAGE_API_KEY: "",
   };
   const next = spawn("pnpm", ["exec", "next", "dev", "--port", PORT], { stdio: "inherit", env });
   children.push(next);
