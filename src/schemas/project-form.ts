@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   aiFeatureSchema,
+  businessModelSchema,
   flowSchema,
   industrySchema,
   productTypeSchema,
@@ -29,6 +30,8 @@ export const projectFormValuesSchema = z.object({
   services: z.array(serviceSchema).max(20),
   ai_features: z.array(aiFeatureSchema).max(20),
   flows: z.array(flowSchema).max(20),
+  business_model: z.array(businessModelSchema).max(20),
+  personas: rows(z.object({ name: text(200) })),
 
   lead_designer: text(24),
   designers: z.array(text(24)).max(50),

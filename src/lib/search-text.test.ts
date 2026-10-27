@@ -14,6 +14,8 @@ const project = projectInputSchema.parse({
   product_types: ["mobile_app_ios"],
   ai_features: ["chatbot", "conversational_ai"],
   flows: ["content_creation"],
+  business_model: ["b2c"],
+  personas: ["Patient booking therapy"],
   lead_designer: "64b7f0c2a1b2c3d4e5f60718",
   summary: "A patient app.",
   metrics: [{ label: "Intake completion", value: "+38%" }],
@@ -28,11 +30,12 @@ describe("buildSearchText", () => {
     expect(text).toContain("mobile app iOS");
     expect(text).toContain("conversational AI");
     expect(text).toContain("posting / content creation");
+    expect(text).toContain("B2C");
     expect(text).not.toContain("mobile_app_ios");
   });
 
   it("includes names, people, story text and metrics", () => {
-    for (const expected of ["Calmly Care", "Calmly Health", "Sara Malik", "A patient app.", "Intake completion +38%"]) {
+    for (const expected of ["Calmly Care", "Calmly Health", "Sara Malik", "A patient app.", "Intake completion +38%", "Patient booking therapy"]) {
       expect(text).toContain(expected);
     }
   });

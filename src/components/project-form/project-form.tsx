@@ -130,6 +130,16 @@ export function ProjectForm(props: FormProps) {
         <ChipGroup path="services" legend="Services" options={catalogOptions(props.catalog.services)} selected={values.services} onChange={(next) => set("services", next)} error={errors.services} />
         <ChipGroup path="ai_features" legend="AI features" options={catalogOptions(props.catalog.ai_features)} selected={values.ai_features} onChange={(next) => set("ai_features", next)} error={errors.ai_features} />
         <ChipGroup path="flows" legend="Flows" options={catalogOptions(props.catalog.flows)} selected={values.flows} onChange={(next) => set("flows", next)} error={errors.flows} />
+        <ChipGroup path="business_model" legend="Business model" options={catalogOptions(props.catalog.business_model)} selected={values.business_model} onChange={(next) => set("business_model", next)} error={errors.business_model} />
+        <RowList
+          path="personas"
+          legend="Personas"
+          columns={[{ key: "name", label: "Persona", placeholder: "e.g. Finance lead at a mid-size firm" }]}
+          rows={values.personas}
+          onChange={(rows) => set("personas", rows)}
+          errors={errors}
+          addLabel="Add persona"
+        />
       </Section>
 
       <Section title="People">

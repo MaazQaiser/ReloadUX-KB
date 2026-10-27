@@ -64,6 +64,8 @@ Each project is one MongoDB document, and the new database is the single source 
 | Scope | services | multi-tag: research, UX audit, UX/UI design, redesign, branding, prototyping, usability testing, dev handoff, front-end code |
 | Scope | ai_features | multi-tag: chatbot, conversational AI, agentic workflow, AI onboarding, content generation, recommendations, AI search, none |
 | Scope | flows | multi-tag: onboarding, signup, posting / content creation, checkout, dashboard, settings, booking, messaging, reporting (extendable) |
+| Audience | business_model | multi-tag: B2B, B2C, B2B2C, internal tool (extendable) |
+| Audience | personas | list of short text, up to 10 ("Finance lead at a mid-size firm") |
 | People | lead_designer, designers, account_manager | references to a people collection |
 | People | delivered_to | client contact name and role |
 | Timeline | start_date, delivery_date, duration_weeks | dates; number |
@@ -232,4 +234,5 @@ Decisions made after the original spec, approved by the project owner.
 | 2026-10-09 | `review_status` values: draft, approved. Projects and people get `deleted_at` for soft delete. |
 | 2026-10-09 | Seed data uses about 8 fictional projects, never real client data. |
 | 2026-10-09 | Integration tests use `mongodb-memory-server`; signed-in e2e tests use the Firebase Auth Emulator. |
+| 2026-10-27 | Projects gain an Audience group: `business_model` (extendable tag list: B2B, B2C, B2B2C, internal tool) and `personas` (up to 10 short texts). Both are optional, count towards completeness, feed search_text, and business model is a Projects filter. SaaS stays an industry value. |
 | 2026-10-09 | Until Atlas Search arrives in phase 2, the Projects grid search is a case-insensitive match on name and client, and the "year" filter means delivery year. |

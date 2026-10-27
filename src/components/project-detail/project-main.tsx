@@ -56,6 +56,18 @@ export function ProjectMain({ project, gallery, catalog }: { project: Project; g
           <Field label="Flows">
             {project.flows.length > 0 ? <TagBadges list={catalog.flows} values={project.flows} /> : null}
           </Field>
+          <Field label="Business model">
+            {project.business_model.length > 0 ? <TagBadges list={catalog.business_model} values={project.business_model} /> : null}
+          </Field>
+          <Field label="Personas">
+            {project.personas.length > 0 ? (
+              <ul className="flex flex-col gap-1">
+                {project.personas.map((persona) => (
+                  <li key={persona}>{persona}</li>
+                ))}
+              </ul>
+            ) : null}
+          </Field>
         </FieldList>
       </DetailSection>
 

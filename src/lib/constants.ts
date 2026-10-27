@@ -82,6 +82,17 @@ export const FLOW = tagList({
   reporting: "reporting",
 });
 
+/** Who the product sells to or serves (SPEC.md decisions log, 2026-10-27). */
+export const BUSINESS_MODEL = tagList({
+  b2b: "B2B",
+  b2c: "B2C",
+  b2b2c: "B2B2C",
+  internal_tool: "internal tool",
+});
+
+/** Personas are short ("Finance lead at a mid-size firm"); a handful is plenty to describe the audience. */
+export const MAX_PERSONAS = 10;
+
 export const PERSON_ROLE = tagList({
   designer: "designer",
   account_manager: "account manager",
@@ -140,6 +151,7 @@ export const EXTENDABLE_TAG_LISTS = {
   services: SERVICE,
   ai_features: AI_FEATURE,
   flows: FLOW,
+  business_model: BUSINESS_MODEL,
 } as const;
 
 export type TagListName = keyof typeof EXTENDABLE_TAG_LISTS;
@@ -152,6 +164,7 @@ export const TAG_LIST_TITLES: Record<TagListName, string> = {
   services: "Services",
   ai_features: "AI features",
   flows: "Flows",
+  business_model: "Business model",
 };
 
 /** localStorage key for the light/dark choice; unset means follow the system setting. */

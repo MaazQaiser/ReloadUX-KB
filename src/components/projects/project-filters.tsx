@@ -17,7 +17,7 @@ import type { GridFilterOptions } from "@/server/services/projects";
 const SEARCH_DELAY_MS = 400;
 
 // Filters in the side panel; the row keeps only search, industry and type.
-const MORE: (keyof ProjectFilters)[] = ["ai_feature", "flow", "designer", "year", "sort"];
+const MORE: (keyof ProjectFilters)[] = ["ai_feature", "flow", "business_model", "designer", "year", "sort"];
 
 interface SelectFieldProps {
   name: keyof ProjectFilters;
@@ -171,6 +171,7 @@ export function ProjectFiltersBar({
             <div key={fieldsKey} className="flex flex-col gap-5 overflow-y-auto p-6">
               <SelectField name="ai_feature" label="AI feature" value={filters.ai_feature} options={tagOptions(catalog.ai_features)} onChange={onSelect} />
               <SelectField name="flow" label="Flow" value={filters.flow} options={tagOptions(catalog.flows)} onChange={onSelect} />
+              <SelectField name="business_model" label="Business model" value={filters.business_model} options={tagOptions(catalog.business_model)} onChange={onSelect} />
               <SelectField
                 name="designer"
                 label="Designer"

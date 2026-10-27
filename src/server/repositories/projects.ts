@@ -147,6 +147,7 @@ function toQuery(filters: ProjectFilters): Filter<Document> {
   if (filters.product_type) conditions.push({ product_types: filters.product_type });
   if (filters.ai_feature) conditions.push({ ai_features: filters.ai_feature });
   if (filters.flow) conditions.push({ flows: filters.flow });
+  if (filters.business_model) conditions.push({ business_model: filters.business_model });
   if (filters.designer) {
     const designer = toObjectId(filters.designer);
     conditions.push({ $or: [{ lead_designer: designer }, { designers: designer }] });

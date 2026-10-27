@@ -24,6 +24,10 @@ describe("suggestFromText", () => {
     expect(suggestion.industry).toBe("legal");
   });
 
+  it("picks up the business model when it's named", () => {
+    expect(suggestFromText("A B2B dashboard, later sold B2C too.", builtInCatalog()).business_model).toEqual(["b2b", "b2c"]);
+  });
+
   it("never suggests the 'none' AI feature", () => {
     expect(suggestFromText("No AI here, none at all.", builtInCatalog()).ai_features).toEqual([]);
   });

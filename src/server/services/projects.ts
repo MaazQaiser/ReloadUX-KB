@@ -49,6 +49,7 @@ async function prepareProject(input: ProjectInput): Promise<Result<PreparedProje
     services: parsed.data.services,
     ai_features: parsed.data.ai_features,
     flows: parsed.data.flows,
+    business_model: parsed.data.business_model,
   });
   const tagIssues = Object.entries(unknownTagValues).map(([list, keys]) => ({ path: list, message: `not a known value: ${keys.join(", ")}` }));
   if (tagIssues.length > 0) return err({ kind: "invalid", issues: tagIssues });

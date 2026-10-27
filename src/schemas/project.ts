@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RESERVED_PROJECT_SLUGS } from "@/lib/constants";
+import { MAX_PERSONAS, RESERVED_PROJECT_SLUGS } from "@/lib/constants";
 import {
   actorSchema,
   idSchema,
@@ -9,9 +9,11 @@ import {
   milestoneSchema,
   shortTextSchema,
   slugSchema,
+  uniqueList,
 } from "./common";
 import {
   aiFeaturesSchema,
+  businessModelsSchema,
   flowsSchema,
   industrySchema,
   productTypesSchema,
@@ -44,6 +46,10 @@ export const projectInputSchema = z
     services: servicesSchema.default([]),
     ai_features: aiFeaturesSchema.default([]),
     flows: flowsSchema.default([]),
+
+    // Audience (SPEC.md decisions log, 2026-10-27): who it was for
+    business_model: businessModelsSchema.default([]),
+    personas: uniqueList(shortTextSchema).max(MAX_PERSONAS, `list at most ${MAX_PERSONAS} personas`).default([]),
 
     // People: ids from the people collection
     lead_designer: idSchema,

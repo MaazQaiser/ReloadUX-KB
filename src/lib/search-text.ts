@@ -20,6 +20,8 @@ export function buildSearchText(project: ProjectFields, peopleNames: readonly st
     ...labels(catalog.services, project.services),
     ...labels(catalog.ai_features, project.ai_features.filter((feature) => feature !== "none")),
     ...labels(catalog.flows, project.flows),
+    ...labels(catalog.business_model, project.business_model),
+    ...project.personas,
     ...peopleNames,
     project.delivered_to?.name,
     project.summary,

@@ -15,6 +15,7 @@ export const productTypeSchema = tagKeySchema;
 export const serviceSchema = tagKeySchema;
 export const aiFeatureSchema = tagKeySchema;
 export const flowSchema = tagKeySchema;
+export const businessModelSchema = tagKeySchema;
 export const personRoleSchema = z.enum(PERSON_ROLE.keys);
 export const reviewStatusSchema = z.enum(REVIEW_STATUS.keys);
 export const userRoleSchema = z.enum(USER_ROLE.keys);
@@ -22,6 +23,7 @@ export const userRoleSchema = z.enum(USER_ROLE.keys);
 export const productTypesSchema = uniqueList(productTypeSchema);
 export const servicesSchema = uniqueList(serviceSchema);
 export const flowsSchema = uniqueList(flowSchema);
+export const businessModelsSchema = uniqueList(businessModelSchema);
 
 // "none" records that we checked and there is no AI; it can't sit next to a real feature.
 export const aiFeaturesSchema = uniqueList(aiFeatureSchema).refine(
@@ -35,6 +37,7 @@ export type ProductType = z.infer<typeof productTypeSchema>;
 export type Service = z.infer<typeof serviceSchema>;
 export type AiFeature = z.infer<typeof aiFeatureSchema>;
 export type Flow = z.infer<typeof flowSchema>;
+export type BusinessModel = z.infer<typeof businessModelSchema>;
 export type PersonRole = z.infer<typeof personRoleSchema>;
 export type ReviewStatus = z.infer<typeof reviewStatusSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;

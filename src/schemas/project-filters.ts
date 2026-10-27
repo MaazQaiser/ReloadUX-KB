@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { idSchema } from "./common";
-import { aiFeatureSchema, flowSchema, industrySchema, productTypeSchema } from "./tags";
+import { aiFeatureSchema, businessModelSchema, flowSchema, industrySchema, productTypeSchema } from "./tags";
 
 export const PROJECT_SORTS = ["newest", "least_complete"] as const;
 export const PROJECT_VIEWS = ["grid", "list"] as const;
@@ -20,6 +20,7 @@ export const projectFiltersSchema = z.object({
   product_type: productTypeSchema.optional(),
   ai_feature: aiFeatureSchema.optional(),
   flow: flowSchema.optional(),
+  business_model: businessModelSchema.optional(),
   /** A person id; matches lead designer or any designer. */
   designer: idSchema.optional(),
   /** Delivery year, in UTC. */

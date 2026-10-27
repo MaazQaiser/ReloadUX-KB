@@ -31,6 +31,7 @@ export function mergeCatalog(added: { list: TagListName; key: string; label: str
     services: listFor("services"),
     ai_features: listFor("ai_features"),
     flows: listFor("flows"),
+    business_model: listFor("business_model"),
   };
 }
 

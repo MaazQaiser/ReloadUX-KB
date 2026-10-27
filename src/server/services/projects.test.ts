@@ -61,6 +61,8 @@ function projectDefaults() {
     services: [],
     ai_features: [],
     flows: [],
+    business_model: [],
+    personas: [],
     designers: [],
     milestones: [],
     figma_files: [],

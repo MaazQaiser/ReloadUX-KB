@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MAX_PERSONAS } from "@/lib/constants";
 import { projectInputSchema, projectSchema } from "./project";
 
 const SARA = "64b7f0c2a1b2c3d4e5f60718";
@@ -22,6 +23,8 @@ describe("projectInputSchema", () => {
       services: [],
       ai_features: [],
       flows: [],
+      business_model: [],
+      personas: [],
       designers: [],
       milestones: [],
       figma_files: [],
@@ -32,6 +35,22 @@ describe("projectInputSchema", () => {
       visuals: [],
       metrics: [],
     });
+  });
+
+  it("trims personas and rejects repeats", () => {
+    expect(projectInputSchema.parse({ ...minimal, personas: ["  Finance lead "] }).personas).toEqual(["Finance lead"]);
+    expect(projectInputSchema.safeParse({ ...minimal, personas: ["Finance lead", "Finance lead"] }).success).toBe(false);
+  });
+
+  it(`allows at most ${MAX_PERSONAS} personas`, () => {
+    const personas = Array.from({ length: MAX_PERSONAS + 1 }, (_, index) => `Persona ${index}`);
+    expect(projectInputSchema.safeParse({ ...minimal, personas }).success).toBe(false);
+    expect(projectInputSchema.safeParse({ ...minimal, personas: personas.slice(1) }).success).toBe(true);
+  });
+
+  it("keeps business model keys", () => {
+    expect(projectInputSchema.parse({ ...minimal, business_model: ["b2b", "b2c"] }).business_model).toEqual(["b2b", "b2c"]);
+    expect(projectInputSchema.safeParse({ ...minimal, business_model: ["b2b", "b2b"] }).success).toBe(false);
   });
 
   it.each(["name", "slug", "industry", "status", "product_types", "lead_designer", "summary"])(

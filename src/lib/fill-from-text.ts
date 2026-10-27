@@ -12,6 +12,7 @@ export interface FillSuggestion {
   services: string[];
   ai_features: string[];
   flows: string[];
+  business_model: string[];
   figma_files: { label: string; url: string }[];
   summary?: string;
 }
@@ -69,6 +70,7 @@ export function suggestFromText(text: string, catalog: TagCatalog): FillSuggesti
     // "none" is a deliberate answer someone gives, not something to read into a brief.
     ai_features: matchList(source, catalog.ai_features).filter((key) => key !== "none"),
     flows: matchList(source, catalog.flows),
+    business_model: matchList(source, catalog.business_model),
     figma_files: figmaLinks(source),
     summary: firstSentences(source),
   };
@@ -76,7 +78,14 @@ export function suggestFromText(text: string, catalog: TagCatalog): FillSuggesti
 
 /** How many fields a suggestion would fill, for the "found N things" message. */
 export function countSuggested(suggestion: FillSuggestion): number {
-  const lists = [suggestion.product_types, suggestion.services, suggestion.ai_features, suggestion.flows, suggestion.figma_files];
+  const lists = [
+    suggestion.product_types,
+    suggestion.services,
+    suggestion.ai_features,
+    suggestion.flows,
+    suggestion.business_model,
+    suggestion.figma_files,
+  ];
   return lists.filter((list) => list.length > 0).length + (suggestion.industry ? 1 : 0) + (suggestion.summary ? 1 : 0);
 }
 
@@ -95,6 +104,7 @@ export function applySuggestion(values: ProjectFormValues, suggestion: FillSugge
     services: union(values.services, suggestion.services),
     ai_features: union(values.ai_features, suggestion.ai_features),
     flows: union(values.flows, suggestion.flows),
+    business_model: union(values.business_model, suggestion.business_model),
     figma_files: hasRows(values.figma_files) || suggestion.figma_files.length === 0 ? values.figma_files : suggestion.figma_files,
     summary: values.summary.trim() ? values.summary : (suggestion.summary ?? ""),
   };
