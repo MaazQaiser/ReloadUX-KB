@@ -14,8 +14,9 @@ async function RoleNav() {
 
 export function AppHeader() {
   return (
-    // Pulse's glass chrome: the page shows through, separated by a soft shadow instead of a rule.
-    <header className="sticky top-0 z-20 bg-background/85 shadow-pulse-soft backdrop-blur-md">
+    // Pulse's glass chrome: the page shows through, separated by a soft shadow instead of a rule. Lighter
+    // than Pulse's 85% so the page's violet light carries through without a seam at its edge.
+    <header className="sticky top-0 z-20 bg-background/55 shadow-pulse-soft backdrop-blur-xl">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:m-2 focus:rounded-full focus:bg-background focus:px-4 focus:py-2"

@@ -122,7 +122,7 @@ export function AskChat({ starters, name }: { starters: readonly string[]; name?
             if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
           }}
           className={cn(
-            "pointer-events-auto w-full rounded-[1.75rem] border bg-background/50 shadow-pulse-soft backdrop-blur-xl transition-[max-width,padding] duration-300 ease-pulse motion-reduce:transition-none",
+            "glow-stroke pointer-events-auto w-full rounded-[1.75rem] border bg-background/50 backdrop-blur-xl transition-[max-width,padding,box-shadow] duration-300 ease-pulse motion-reduce:transition-none",
             expanded ? "max-w-[44.1rem] p-3 sm:p-4" : "max-w-md p-1.5",
           )}
         >

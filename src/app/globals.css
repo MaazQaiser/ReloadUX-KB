@@ -108,10 +108,13 @@
   --sidebar-accent-foreground: var(--pulse-ink);
   --sidebar-border: var(--pulse-hairline);
   --sidebar-ring: var(--pulse-ink);
+  /* How strong the violet light behind every page is; dark needs more to show on near-black. */
+  --page-hue: 9%;
 }
 
 .dark {
   color-scheme: dark;
+  --page-hue: 16%;
 }
 
 @layer base {
@@ -120,6 +123,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* A faint violet light from the top, and a softer one low on the right, fixed behind the content. */
+    background-image:
+      radial-gradient(70% 45% at 50% -8%, color-mix(in oklab, var(--pulse-accent) var(--page-hue), transparent), transparent 70%),
+      radial-gradient(45% 40% at 100% 100%, color-mix(in oklab, var(--pulse-accent) calc(var(--page-hue) * 0.6), transparent), transparent 70%);
+    background-attachment: fixed;
     transition:
       background-color 300ms ease,
       color 300ms ease;
@@ -130,6 +138,50 @@
   ::selection {
     background: var(--pulse-ink);
     color: var(--pulse-surface);
+  }
+}
+
+/* The ask bar's stroke: a violet edge lit at the top-left and bottom-right corners, with a soft
+   violet light around it. Brighter while someone is typing. */
+@utility glow-stroke {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    -10px -6px 32px -16px color-mix(in oklab, var(--pulse-accent) 70%, transparent),
+    10px 8px 32px -16px color-mix(in oklab, var(--pulse-violet-200) 60%, transparent),
+    var(--pulse-shadow-soft);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    padding: 1px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.7;
+    background:
+      radial-gradient(35% 140% at 0% 0%, var(--pulse-violet-200), transparent 70%),
+      radial-gradient(35% 140% at 100% 100%, var(--pulse-accent), transparent 70%);
+    /* Keep only the 1px ring: the padding box minus the content box. */
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    transition: opacity 300ms var(--pulse-ease-out-expo);
+  }
+  &:focus-within {
+    box-shadow:
+      -12px -8px 40px -14px color-mix(in oklab, var(--pulse-accent) 85%, transparent),
+      12px 10px 40px -14px color-mix(in oklab, var(--pulse-violet-200) 75%, transparent),
+      var(--pulse-shadow-soft-lg);
+  }
+  &:focus-within::before {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &::before {
+      transition: none;
+    }
   }
 }
 
