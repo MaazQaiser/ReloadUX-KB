@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "e2e": "playwright test",
+    "eval": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/eval/run.ts",
     "db:indexes": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/create-indexes.ts",
     "db:local": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/db-local.ts",
     "db:seed": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed/index.ts",

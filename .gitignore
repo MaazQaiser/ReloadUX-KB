@@ -54,3 +54,6 @@ next-env.d.ts
 firebase-debug.log
 /.next-e2e/
 /playwright/.auth/
+
+# eval runs (results, transcripts, costs)
+/evals/results/

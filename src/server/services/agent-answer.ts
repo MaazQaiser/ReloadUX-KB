@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { AskEvent } from "@/schemas/answer";
 import type { User } from "@/schemas/user";
 import { buildAnswerCards, type SubmittedAnswer } from "@/server/agent/answer";
-import { AgentError, runAgent, type AgentFailure, type HistoryTurn } from "@/server/agent/loop";
+import { AgentError, runAgent, type AgentFailure, type AgentUsage, type HistoryTurn } from "@/server/agent/loop";
 import { PROMPT_VERSION } from "@/server/agent/prompts/system-v1";
 import { logger } from "@/server/logger";
 import { insertConversation } from "@/server/repositories/conversations";
@@ -21,6 +21,16 @@ const FAILURE_MESSAGES: Record<AgentFailure, string> = {
 const BUSY_MESSAGE = "The assistant is busy right now. Try again in a minute.";
 const GENERIC_MESSAGE = "Something went wrong while answering. Try again in a moment.";
 
+/** What happened in a turn, for callers that measure it (the eval runner). */
+export interface TurnSummary {
+  turnId: string;
+  toolsCalled: string[];
+  usage: AgentUsage;
+  latencyMs: number;
+  /** Set when the turn ended without an answer: an agent outcome, or "error" for API and infrastructure failures. */
+  failure?: AgentFailure | "error";
+}
+
 /** Splits text into word-sized deltas, keeping the spaces, so joined deltas equal the text. */
 export function toDeltas(text: string): string[] {
   return text.match(/\S+\s*/g) ?? [];
@@ -37,14 +47,16 @@ export async function* streamAgentAnswer(
   history: readonly HistoryTurn[],
   user: User,
   signal?: AbortSignal,
+  observe?: (summary: TurnSummary) => void,
 ): AsyncGenerator<AskEvent> {
   const turnId = crypto.randomUUID();
   const startedAt = Date.now();
   const [catalog, library] = await Promise.all([getTagCatalog(), listProjectOptions()]);
   let answer: SubmittedAnswer | null = null;
   let toolsCalled: string[] = [];
-  let usage = { input: 0, output: 0 };
+  let usage: AgentUsage = { input: 0, output: 0, models: [] };
   let failure: string | null = null;
+  let failureKind: TurnSummary["failure"];
 
   yield { type: "status", label: "Reading the question" };
   try {
@@ -54,6 +66,7 @@ export async function* streamAgentAnswer(
     }
   } catch (error) {
     if (signal?.aborted) return;
+    failureKind = error instanceof AgentError ? error.kind : "error";
     if (error instanceof AgentError) failure = FAILURE_MESSAGES[error.kind];
     else if (error instanceof Anthropic.RateLimitError || error instanceof Anthropic.InternalServerError) failure = BUSY_MESSAGE;
     else failure = GENERIC_MESSAGE;
@@ -76,6 +89,7 @@ export async function* streamAgentAnswer(
     created_at: new Date(startedAt),
   });
   log.info("agent turn", { turnId, prompt: PROMPT_VERSION, tools: toolsCalled, projects: cards.records.length, ms: Date.now() - startedAt, ...usage });
+  observe?.({ turnId, toolsCalled, usage, latencyMs: Date.now() - startedAt, failure: failureKind });
 
   if (!answer || failure) {
     yield { type: "error", message: failure ?? GENERIC_MESSAGE };

@@ -15,7 +15,14 @@ export interface HistoryTurn {
 
 export type AgentEvent =
   | { type: "status"; label: string }
-  | { type: "final"; answer: SubmittedAnswer; toolsCalled: string[]; usage: { input: number; output: number } };
+  | { type: "final"; answer: SubmittedAnswer; toolsCalled: string[]; usage: AgentUsage };
+
+/** Tokens across every request in the turn, and which models actually served them (a refusal fallback can switch). */
+export interface AgentUsage {
+  input: number;
+  output: number;
+  models: string[];
+}
 
 export type AgentFailure = "refused" | "truncated" | "no_answer" | "timeout";
 
@@ -103,7 +110,7 @@ export async function* runAgent(input: AgentInput): AsyncGenerator<AgentEvent> {
   const messages: Anthropic.Beta.BetaMessageParam[] = [...historyMessages(history), { role: "user", content: question }];
   const revealed = new Set<string>();
   const toolsCalled: string[] = [];
-  const usage = { input: 0, output: 0 };
+  const usage: AgentUsage = { input: 0, output: 0, models: [] };
   let corrections = 0;
 
   for (;;) {
@@ -128,6 +135,7 @@ export async function* runAgent(input: AgentInput): AsyncGenerator<AgentEvent> {
     }
     usage.input += response.usage.input_tokens + (response.usage.cache_read_input_tokens ?? 0) + (response.usage.cache_creation_input_tokens ?? 0);
     usage.output += response.usage.output_tokens;
+    if (!usage.models.includes(response.model)) usage.models.push(response.model);
 
     if (response.stop_reason === "refusal") throw new AgentError("refused");
     if (response.stop_reason === "max_tokens") throw new AgentError("truncated");

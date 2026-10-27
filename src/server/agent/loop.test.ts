@@ -22,7 +22,7 @@ let callId = 0;
 const toolUse = (name: string, input: unknown): Block => ({ type: "tool_use", id: `toolu_${++callId}`, name, input }) as Block;
 const text = (value: string): Block => ({ type: "text", text: value, citations: null }) as Block;
 const reply = (content: Block[], stop_reason: Anthropic.Beta.BetaStopReason = "tool_use") =>
-  ({ content, stop_reason, usage: { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 50, cache_creation_input_tokens: 0 } }) as Anthropic.Beta.BetaMessage;
+  ({ model: AI_CONFIG.agent.model, content, stop_reason, usage: { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 50, cache_creation_input_tokens: 0 } }) as Anthropic.Beta.BetaMessage;
 
 const GOOD = { verdict: "yes", projects: [{ slug: "calmly-care", why: "Healthcare app with a symptom-check chatbot" }], answer: "Yes: Calmly Care." };
 const library = [
@@ -69,7 +69,7 @@ describe("runAgent", () => {
     const events = await collect(client);
 
     expect(events[0]).toEqual({ type: "status", label: "Searching projects" });
-    expect(events.at(-1)).toEqual({ type: "final", answer: GOOD, toolsCalled: ["search_projects"], usage: { input: 300, output: 40 } });
+    expect(events.at(-1)).toEqual({ type: "final", answer: GOOD, toolsCalled: ["search_projects"], usage: { input: 300, output: 40, models: [AI_CONFIG.agent.model] } });
     // The tool result went back to the model, and the request used the configured model and fallbacks.
     const second = requests[1]!;
     expect(second.model).toBe(AI_CONFIG.agent.model);

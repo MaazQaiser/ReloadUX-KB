@@ -16,7 +16,7 @@ const user = { id: "64b7f0c2a1b2c3d4e5f60799", role: "viewer" } as User;
 let id = 0;
 const toolUse = (name: string, input: unknown) => ({ type: "tool_use", id: `toolu_${++id}`, name, input });
 const reply = (content: unknown[], stop_reason = "tool_use") =>
-  ({ content, stop_reason, usage: { input_tokens: 1000, output_tokens: 100, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } }) as unknown as Anthropic.Beta.BetaMessage;
+  ({ model: "claude-opus-5-5", content, stop_reason, usage: { input_tokens: 1000, output_tokens: 100, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } }) as unknown as Anthropic.Beta.BetaMessage;
 
 function scripted(...replies: Anthropic.Beta.BetaMessage[]): Anthropic {
   const create = vi.fn(async () => {
