@@ -5,8 +5,8 @@ Internal web app where the reloadux team asks about past projects ("have we done
 ## Stack
 
 - Next.js (App Router) + TypeScript (strict) + Tailwind + shadcn/ui, hosted on Vercel
-- Firebase Authentication (Google provider) on the client, `firebase-admin` on the server to verify tokens and issue session cookies; any verified Google account; roles (viewer, editor, admin) stored in the MongoDB `users` collection, not in Firebase
-- MongoDB Atlas (official `mongodb` driver) with Atlas Vector Search and Atlas Search
+- Firebase Authentication (Google provider) on the client, `firebase-admin` on the server to verify tokens and issue session cookies; any verified Google account; roles (viewer, editor, admin) stored in the PostgreSQL `users` table, not in Firebase
+- PostgreSQL with pgvector (vector search) and built-in full-text search, accessed through Drizzle ORM (`drizzle-orm`, `pg`); schema changes go through drizzle-kit migrations; browse it with pgAdmin. Tests and throwaway databases use PGlite
 - Cloudflare R2 for images (S3-compatible SDK)
 - Anthropic SDK (Claude) for the agent and image captions; Voyage AI for embeddings and reranking
 - Zod for all validation; Vitest for tests; Playwright for end-to-end; Inngest or Trigger.dev for long jobs
@@ -33,8 +33,8 @@ src/
     api/                # route handlers (agent stream, uploads, jobs)
   components/           # UI components; ui/ = shadcn primitives
   server/               # server-only code (import 'server-only' at the top)
-    db/                 # Mongo client, collections, indexes
-    repositories/       # the ONLY place that queries MongoDB
+    db/                 # Postgres client, Drizzle schema, migrations
+    repositories/       # the ONLY place that queries the database
     services/           # business logic (projects, visuals, gaps)
     agent/              # agent loop, tools/, prompts/
     ai/                 # Claude, Voyage, captioning clients
@@ -78,9 +78,9 @@ tests/                  # integration and e2e tests
 
 ## Data rules
 
-- Only `server/repositories/` talks to MongoDB. Services call repositories; routes call services.
+- Only `server/repositories/` talks to the database. Services call repositories; routes call services.
 - Every write goes through a Zod schema and sets `updated_by` and `updated_at`.
-- Indexes (regular, Atlas Search, Vector Search) are defined in code under `server/db/indexes.ts` and created by a script, never by hand only.
+- Tables and indexes (regular, full-text, vector) are defined in code in `server/db/schema.ts` and applied by drizzle-kit migrations (`pnpm db:migrate`), never by hand only.
 - Saving a project re-generates `search_text`, chunks and embeddings in one service function, so there is one path, not several.
 - Migration and import scripts are idempotent (safe to run twice), match by slug, and support `--dry-run`.
 - Never delete data without a confirmation step; prefer soft delete (`deleted_at`).
@@ -109,7 +109,7 @@ tests/                  # integration and e2e tests
 ## Testing
 
 - Unit tests (Vitest) for every tool, service and utility. Mock external APIs (Claude, Voyage, R2).
-- Integration tests against a test MongoDB for repositories and the save pipeline.
+- Integration tests against a throwaway PGlite database for repositories and the save pipeline.
 - Playwright for the key flows: sign in, ask a question, add a project, upload an image. Sign-in in e2e uses the Firebase Auth Emulator, never a test-only provider in app code.
 - Write the test that reproduces a bug before fixing it.
 - The eval set (`evals/evals.json`) must not get worse: top-3 project accuracy, correct Yes / Partly / No verdict, zero invented facts.

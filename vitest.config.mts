@@ -26,10 +26,9 @@ export default defineConfig({
         test: {
           name: "integration",
           include: ["tests/integration/**/*.test.ts"],
-          globalSetup: ["tests/integration/global-setup.ts"],
           setupFiles: ["tests/integration/setup.ts"],
-          // The first run downloads a MongoDB binary.
-          hookTimeout: 120_000,
+          // Each file boots its own PGlite and runs the migrations.
+          hookTimeout: 60_000,
         },
       },
     ],

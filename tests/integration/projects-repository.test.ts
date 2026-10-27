@@ -1,8 +1,7 @@
-import { ObjectId } from "mongodb";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
-import { syncIndexes } from "@/server/db/indexes";
+import { projectDesigners, projects } from "@/server/db/schema";
 import {
   findProjectBySlug,
   insertProject,
@@ -15,6 +14,7 @@ import {
 } from "@/server/repositories/projects";
 import type { ProjectInput } from "@/schemas/project";
 import type { ProjectFilters } from "@/schemas/project-filters";
+import { insertPeopleWithIds, resetDatabase } from "./database";
 
 const SEED = { actor: "system:seed", reviewStatus: "approved", searchText: "seed text" } as const;
 const SARA = "64b7f0c2a1b2c3d4e5f60718";
@@ -52,20 +52,21 @@ const fintua = project({
 });
 const ledger = project({ name: "ledger HRMS", slug: "ledger-hrms", industry: "hr", lead_designer: ALI, status: "ongoing" });
 
-async function collection() {
-  return (await getDb()).collection(COLLECTIONS.projects);
+async function rowCount(slug?: string) {
+  return (await getDb()).$count(projects, slug ? eq(projects.slug, slug) : undefined);
+}
+
+async function softDeleteRow(slug: string) {
+  await (await getDb()).update(projects).set({ deleted_at: new Date() }).where(eq(projects.slug, slug));
 }
 
 async function slugs(filters: ProjectFilters): Promise<string[]> {
   return (await listProjects(filters, PAGE)).items.map((item) => item.slug);
 }
 
-beforeAll(async () => {
-  await syncIndexes(await getDb(), { dryRun: false });
-});
-
 beforeEach(async () => {
-  await (await collection()).deleteMany({});
+  await resetDatabase();
+  await insertPeopleWithIds([SARA, ALI]);
 });
 
 describe("upsertProjectBySlug", () => {
@@ -84,12 +85,17 @@ describe("upsertProjectBySlug", () => {
     expect(saved.id).toMatch(/^[a-f0-9]{24}$/);
   });
 
-  it("stores people references as ObjectIds", async () => {
-    await upsertProjectBySlug(fintua, SEED);
-    const raw = await (await collection()).findOne({ slug: "fintua-onboarding" });
+  it("stores the other designers in the join table, in form order", async () => {
+    const saved = await upsertProjectBySlug(fintua, SEED);
+    const rows = await (await getDb()).select().from(projectDesigners).where(eq(projectDesigners.project_id, saved.id));
 
-    expect(raw?.lead_designer).toBeInstanceOf(ObjectId);
-    expect(raw?.designers[0]).toBeInstanceOf(ObjectId);
+    expect(rows).toEqual([{ project_id: saved.id, person_id: SARA, position: 0 }]);
+    expect(saved.designers).toEqual([SARA]);
+  });
+
+  it("refuses a lead designer who isn't in people", async () => {
+    await expect(upsertProjectBySlug({ ...elia, lead_designer: "64b7f0c2a1b2c3d4e5f60700" }, SEED)).rejects.toThrow();
+    expect(await rowCount()).toBe(0);
   });
 
   it("updates in place when run again and clears optional fields left out", async () => {
@@ -99,14 +105,15 @@ describe("upsertProjectBySlug", () => {
     expect(second.id).toBe(first.id);
     expect(second.name).toBe("Elia Wellness v2");
     expect(second).not.toHaveProperty("client_name");
-    expect(await (await collection()).countDocuments()).toBe(1);
-    expect(await (await collection()).findOne({ slug: elia.slug })).not.toHaveProperty("client_name");
+    expect(await rowCount()).toBe(1);
+    const [raw] = await (await getDb()).select({ client_name: projects.client_name }).from(projects).where(eq(projects.slug, elia.slug));
+    expect(raw?.client_name).toBeNull();
   });
 
   it("validates before writing", async () => {
     await expect(upsertProjectBySlug({ ...elia, product_types: [] }, SEED)).rejects.toThrow();
     await expect(upsertProjectBySlug(elia, { ...SEED, actor: "nobody" })).rejects.toThrow();
-    expect(await (await collection()).countDocuments()).toBe(0);
+    expect(await rowCount()).toBe(0);
   });
 });
 
@@ -114,7 +121,7 @@ describe("visibility", () => {
   it("hides drafts and soft-deleted projects from reads", async () => {
     await upsertProjectBySlug(elia, { ...SEED, reviewStatus: "draft" });
     await upsertProjectBySlug(fintua, SEED);
-    await (await collection()).updateOne({ slug: fintua.slug }, { $set: { deleted_at: new Date() } });
+    await softDeleteRow(fintua.slug);
 
     expect(await findProjectBySlug("elia-wellness")).toBeNull();
     expect(await findProjectBySlug("fintua-onboarding")).toBeNull();
@@ -204,7 +211,7 @@ describe("updateProjectById", () => {
     if (!created) throw new Error("insert failed");
 
     expect(await updateProjectById(created.id, { ...elia, slug: "new-slug" }, SEED)).toBeNull();
-    await (await collection()).updateOne({ slug: elia.slug }, { $set: { deleted_at: new Date() } });
+    await softDeleteRow(elia.slug);
     expect(await updateProjectById(created.id, elia, SEED)).toBeNull();
     expect(await updateProjectById("64b7f0c2a1b2c3d4e5f60799", elia, SEED)).toBeNull();
   });
@@ -230,7 +237,7 @@ describe("soft delete and unpaged listing", () => {
     expect(deleted?.updated_by).toBe("system:test");
     expect(await slugs({})).toEqual(["ledger-hrms"]);
     expect(await findProjectBySlug("elia-wellness", { includeDrafts: true })).toBeNull();
-    expect(await (await collection()).countDocuments({ slug: "elia-wellness" })).toBe(1);
+    expect(await rowCount("elia-wellness")).toBe(1);
     expect(await softDeleteProjectById(saved.id, "system:test")).toBeNull();
   });
 

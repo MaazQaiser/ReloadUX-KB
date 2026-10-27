@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { EnvError, parseAiConfig, parseAuthConfig, parseIntegrations, parseServerEnv } from "./env";
 
 const valid = {
-  MONGODB_URI: "mongodb+srv://user:s3cret@cluster0.example.mongodb.net",
-  MONGODB_DB: "reloadux_dev",
+  DATABASE_URL: "postgres://reloadux:s3cret@127.0.0.1:5433/reloadux",
 };
 
 function problemsFor(source: Record<string, string | undefined>): string[] {
@@ -26,25 +25,25 @@ describe("parseServerEnv", () => {
   });
 
   it("reports every missing required variable", () => {
-    expect(problemsFor({})).toEqual(["MONGODB_URI: is required", "MONGODB_DB: is required"]);
+    expect(problemsFor({})).toEqual(["DATABASE_URL: is required"]);
   });
 
   it("treats empty strings as missing", () => {
-    expect(problemsFor({ ...valid, MONGODB_DB: "" })).toEqual(["MONGODB_DB: is required"]);
+    expect(problemsFor({ ...valid, DATABASE_URL: "" })).toEqual(["DATABASE_URL: is required"]);
   });
 
   it("rejects a malformed connection string without echoing it", () => {
-    const secret = "postgres://admin:hunter2@db.example.com";
+    const secret = "mysql://admin:hunter2@db.example.com";
     const error = (() => {
       try {
-        parseServerEnv({ ...valid, MONGODB_URI: secret });
+        parseServerEnv({ ...valid, DATABASE_URL: secret });
       } catch (caught) {
         return caught;
       }
     })();
 
     expect(error).toBeInstanceOf(EnvError);
-    expect(String(error)).toContain("MONGODB_URI: must start with mongodb://");
+    expect(String(error)).toContain("DATABASE_URL: must start with postgres://");
     expect(String(error)).not.toContain("hunter2");
   });
 
@@ -69,7 +68,7 @@ describe("parseAuthConfig", () => {
   };
 
   it("returns null when nothing is configured, so the app stays locked", () => {
-    expect(parseAuthConfig({ MONGODB_URI: "mongodb://x" })).toBeNull();
+    expect(parseAuthConfig({ DATABASE_URL: "postgres://x" })).toBeNull();
   });
 
   it("parses a full configuration and restores line breaks in the key", () => {

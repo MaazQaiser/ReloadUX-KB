@@ -1,7 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { MongoMemoryServer } from "mongodb-memory-server";
 import type { User } from "@/schemas/user";
 import type { TurnSummary } from "@/server/services/agent-answer";
 import { logger } from "@/server/logger";
@@ -66,16 +65,13 @@ async function main(): Promise<number> {
   const reps = Math.max(1, Number(values.reps));
   const concurrency = Math.max(1, Number(values.concurrency));
 
-  // The database must be ours before any module reads MONGODB_URI.
-  const mongo = await MongoMemoryServer.create();
-  process.env.MONGODB_URI = mongo.getUri();
-  process.env.MONGODB_DB = "eval";
+  // The database must be ours before any module reads DATABASE_URL.
+  process.env.DATABASE_URL = "pglite:memory";
 
-  const [{ getClaude }, { AI_CONFIG }, { getDb, closeMongoClient }, { syncIndexes }, { seedDatabase }, { streamAgentAnswer }] = await Promise.all([
+  const [{ getClaude }, { AI_CONFIG }, { closeDb }, { seedDatabase }, { streamAgentAnswer }] = await Promise.all([
     import("@/server/ai/claude"),
     import("@/server/ai/config"),
     import("@/server/db/client"),
-    import("@/server/db/indexes"),
     import("../seed/run"),
     import("@/server/services/agent-answer"),
   ]);
@@ -94,7 +90,6 @@ async function main(): Promise<number> {
     const tags = values.tags?.split(",");
     const cases = set.cases.filter((c) => (!only || only.includes(c.id)) && (!tags || c.tags.some((tag) => tags.includes(tag))));
 
-    await syncIndexes(await getDb(), { dryRun: false });
     await seedDatabase({ dryRun: false, log: log.child({ step: "seed" }) });
 
     const runDir = join("evals", "results", new Date().toISOString().replace(/[:.]/g, "-"));
@@ -191,8 +186,7 @@ async function main(): Promise<number> {
     log.info("eval complete", { dir: runDir, ...summary, failed_cases: summary.failed_cases.length });
     return 0;
   } finally {
-    await closeMongoClient();
-    await mongo.stop();
+    await closeDb();
   }
 }
 

@@ -18,7 +18,7 @@ Answer rules: never invent a project, link, date or person; always link the proj
 
 ## Architecture and stack
 
-One Next.js app does everything: the UI, the agent API and the background jobs, all writing to one MongoDB database, with images in R2.
+One Next.js app does everything: the UI, the agent API and the background jobs, all writing to one PostgreSQL database, with images in R2.
 
 ```
 Inputs:   Notion + Sheets (one-time import) | Screenshot uploads | Form + admin chat
@@ -27,13 +27,13 @@ Inputs:   Notion + Sheets (one-time import) | Screenshot uploads | Form + admin 
 Ingest jobs:  extract with Claude, caption images, embed with Voyage
               |                                   |
               v                                   v
-MongoDB Atlas (projects, vectors, people, logs)   Cloudflare R2 (screenshots, thumbnails)
+PostgreSQL + pgvector (projects, vectors, people, logs)  Cloudflare R2 (screenshots, thumbnails)
               |                                   |
               +---------------> Agent: Claude + 6 tools <---+
                                   |            |
                                   v            v
                      Review queue (gaps)    Ask screen (web app, Google sign-in)
-                     approved fixes update MongoDB records
+                     approved fixes update database records
 ```
 
 All three inputs pass through the same ingest step, and unanswered questions loop back through the review queue into the records.
@@ -43,8 +43,8 @@ All three inputs pass through the same ingest step, and unanswered questions loo
 | App (front and back end) | Next.js App Router, TypeScript, Tailwind, shadcn/ui | One codebase, well supported by Claude Code |
 | Hosting | Vercel | Simple deploys, built-in cron |
 | Long jobs | Inngest or Trigger.dev | Migration and bulk imports can outlast serverless time limits |
-| Login | Firebase Authentication with Google; server-verified session cookie, roles stored in MongoDB | Internal-only access with roles; Auth Emulator for end-to-end tests |
-| Database | MongoDB Atlas with Vector Search and Atlas Search | Records, vectors, keyword search and logs in one place |
+| Login | Firebase Authentication with Google; server-verified session cookie, roles stored in PostgreSQL | Internal-only access with roles; Auth Emulator for end-to-end tests |
+| Database | PostgreSQL with pgvector and full-text search, via Drizzle ORM | Records, vectors, keyword search and logs in one place; browsable in pgAdmin |
 | Files | Cloudflare R2 | Cheap image storage, no egress fees |
 | LLM | Claude via Anthropic API | Tool use for the agent, vision for captions |
 | Embeddings and rerank | Voyage AI | Strong retrieval quality, reranker included |
@@ -52,7 +52,7 @@ All three inputs pass through the same ingest step, and unanswered questions loo
 
 ## Project data model
 
-Each project is one MongoDB document, and the new database is the single source of truth (Notion and Sheets are a one-time import). Fields with a fixed list of values use controlled tags so filters stay reliable.
+Each project is one row in the projects table, and the new database is the single source of truth (Notion and Sheets are a one-time import). Fields with a fixed list of values use controlled tags so filters stay reliable.
 
 | Group | Field | Type / allowed values |
 | --- | --- | --- |
@@ -204,7 +204,7 @@ Build in six phases of roughly one week each, shipping something usable from pha
 
 **Accounts and keys checklist:**
 
-- [ ] MongoDB Atlas cluster (free tier to start) with Vector Search enabled
+- [ ] Hosted PostgreSQL with the pgvector extension (e.g. Neon, Supabase or Vercel Postgres)
 - [ ] Anthropic API key
 - [ ] Voyage AI API key (embeddings and reranker)
 - [ ] Cloudflare R2 bucket and access keys
@@ -237,4 +237,5 @@ Decisions made after the original spec, approved by the project owner.
 | 2026-10-27 | Search storage: each project's profile (name, tags, summary) is embedded as a chunk in `project_chunks` alongside its story chunks, instead of an `embedding` field on `projects`, so vector search runs over one collection. Embeddings use Voyage `voyage-4` (1024 dimensions) and reranking `rerank-3`; a chunk is re-embedded only when its text hash changes. The keyword half uses a regular MongoDB text index on name, client and search_text (works locally, in tests and on Atlas). Vector search uses Atlas Vector Search, with an in-app similarity fallback when the database isn't Atlas. |
 | 2026-10-27 | Phase 3 agent runs on Claude Opus 5.5 (effort medium) with server-side refusal fallbacks; Atlas free cluster is the target database. |
 | 2026-10-27 | Projects gain an Audience group: `business_model` (extendable tag list: B2B, B2C, B2B2C, internal tool) and `personas` (up to 10 short texts). Both are optional, count towards completeness, feed search_text, and business model is a Projects filter. SaaS stays an industry value. |
+| 2026-10-27 | Database moves from MongoDB to PostgreSQL with pgvector, accessed through Drizzle ORM with drizzle-kit migrations; supersedes the MongoDB and Atlas entries above. Collections become tables (project designers a join table); ids stay 24-character hex strings generated by the app; keyword search uses a weighted full-text tsvector, vector search an HNSW cosine index on project_chunks.embedding. Local development runs Postgres in Docker (pgvector/pgvector:pg16, port 5433); tests, e2e and the eval use PGlite. |
 | 2026-10-09 | Until Atlas Search arrives in phase 2, the Projects grid search is a case-insensitive match on name and client, and the "year" filter means delivery year. |

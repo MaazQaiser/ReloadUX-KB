@@ -7,7 +7,7 @@ export const slugSchema = z
   .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "must be lowercase letters and digits joined by hyphens");
 
 /**
- * Domain records use string ids; repositories convert to and from ObjectId,
+ * Domain records use 24-character hex string ids, stored as text keys in Postgres,
  * so these schemas stay safe to import in client components.
  */
 export const idSchema = z.string().regex(/^[a-f0-9]{24}$/, "must be a 24-character hex id");

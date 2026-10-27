@@ -1,53 +1,40 @@
 import "server-only";
-import { MongoServerError, ObjectId, type Document, type Filter, type WithId } from "mongodb";
+import { and, arrayContains, asc, desc, eq, getTableColumns, gte, ilike, inArray, isNotNull, isNull, lt, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { escapeRegExp } from "@/lib/regex";
-import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
+import { getDb, type Database } from "@/server/db/client";
+import { projectDesigners, projects } from "@/server/db/schema";
 import { actorSchema, type Actor } from "@/schemas/common";
 import { projectInputSchema, projectSchema, type Project, type ProjectInput } from "@/schemas/project";
 import type { Pagination, ProjectFilters } from "@/schemas/project-filters";
 import { reviewStatusSchema, type ReviewStatus } from "@/schemas/tags";
-import { fromDocument, toObjectId, toUpdate } from "./mongo";
-
-type ParsedProjectInput = z.infer<typeof projectInputSchema>;
+import { escapeLike, fromRow, newId, omit, withNulls } from "./rows";
 
 // Only approved, live records are visible; drafts wait in the review queue (phase 4).
-const VISIBLE: Filter<Document> = { review_status: "approved", deleted_at: { $exists: false } };
-const LIVE_DRAFT: Filter<Document> = { review_status: "draft", deleted_at: { $exists: false } };
+const VISIBLE = and(eq(projects.review_status, "approved"), isNull(projects.deleted_at));
+const LIVE_DRAFT = and(eq(projects.review_status, "draft"), isNull(projects.deleted_at));
 
-// Optional fields with no default. Each is unset when absent, so an edit can clear it.
+// Optional fields with no default. Each is written as null when absent, so an edit can clear it.
 const OPTIONAL_FIELDS = Object.entries(projectInputSchema.shape)
   .filter(([, schema]) => schema instanceof z.ZodOptional)
   .map(([key]) => key);
 
-/** Shared with project-search.ts, which keeps search queries out of this file. */
-export async function projectsCollection() {
-  return (await getDb()).collection(COLLECTIONS.projects);
-}
+// The tsvector is for matching only; reads never need it.
+const storedColumns = omit(getTableColumns(projects), "search_document");
 
-/** References are stored as ObjectIds so later queries can join to people and visuals. */
-function toStoredReferences(project: ParsedProjectInput) {
-  return {
-    ...project,
-    lead_designer: toObjectId(project.lead_designer),
-    designers: project.designers.map(toObjectId),
-    account_manager: project.account_manager && toObjectId(project.account_manager),
-    visuals: project.visuals.map(toObjectId),
-  };
-}
+/** Every column a Project needs, with its other designers gathered from the join table in form order. */
+export const projectColumns = {
+  ...storedColumns,
+  // Written out in full: Drizzle drops table names from columns in a single-table select, which would make this ambiguous.
+  designers: sql<string[]>`coalesce((select array_agg(pd.person_id order by pd.position) from project_designers pd where pd.project_id = "projects"."id"), '{}')`,
+};
 
-function idToString(value: unknown): unknown {
-  return value instanceof ObjectId ? value.toHexString() : value;
-}
+type ProjectRow = { [K in keyof typeof storedColumns]: (typeof projects.$inferSelect)[K] } & { designers: string[] };
 
-export function toProject(document: WithId<Document>): Project {
-  return fromDocument(projectSchema, COLLECTIONS.projects, {
-    ...document,
-    lead_designer: idToString(document.lead_designer),
-    designers: Array.isArray(document.designers) ? document.designers.map(idToString) : document.designers,
-    account_manager: idToString(document.account_manager),
-    visuals: Array.isArray(document.visuals) ? document.visuals.map(idToString) : document.visuals,
+export function toProject(row: ProjectRow): Project {
+  return fromRow(projectSchema, "projects", {
+    ...row,
+    // jsonb keeps dates as ISO strings.
+    milestones: row.milestones.map((milestone) => ({ ...milestone, date: new Date(milestone.date) })),
   });
 }
 
@@ -58,42 +45,50 @@ export interface ProjectWriteOptions {
   searchText: string;
 }
 
-/** Validates and builds the $set/$unset for a write; every write path goes through here. */
+/** Validates and builds the row for a write; every write path goes through here. */
 function toProjectWrite(input: ProjectInput, { actor, reviewStatus, searchText }: ProjectWriteOptions) {
-  const project = projectInputSchema.parse(input);
-  const absent = Object.fromEntries(OPTIONAL_FIELDS.map((key) => [key, undefined]));
   // Visuals are managed by the visuals service (upload, remove), never by saving the project form.
-  const stored = Object.fromEntries(Object.entries(toStoredReferences(project)).filter(([key]) => key !== "visuals"));
-  const { $set, $unset } = toUpdate({ ...absent, ...stored });
-  return {
-    slug: project.slug,
-    $set: {
-      ...$set,
-      review_status: reviewStatusSchema.parse(reviewStatus),
-      search_text: searchText,
-      updated_by: actorSchema.parse(actor),
-      updated_at: new Date(),
-    },
-    $unset,
+  const { designers, milestones, ...project } = omit(projectInputSchema.parse(input), "visuals");
+  const values = {
+    ...withNulls(project, OPTIONAL_FIELDS),
+    milestones: milestones.map((milestone) => ({ ...milestone, date: milestone.date.toISOString() })),
+    review_status: reviewStatusSchema.parse(reviewStatus),
+    search_text: searchText,
+    updated_by: actorSchema.parse(actor),
+    updated_at: new Date(),
   };
+  return { values, designers };
 }
 
-function withUnset({ $set, $unset }: { $set: Document; $unset: Record<string, ""> }) {
-  return { $set, $setOnInsert: { visuals: [] }, ...(Object.keys($unset).length > 0 && { $unset }) };
+async function replaceDesigners(tx: Database, projectId: string, designers: readonly string[]): Promise<void> {
+  await tx.delete(projectDesigners).where(eq(projectDesigners.project_id, projectId));
+  if (designers.length > 0) {
+    await tx.insert(projectDesigners).values(designers.map((personId, position) => ({ project_id: projectId, person_id: personId, position })));
+  }
+}
+
+async function readProject(db: Database, condition: SQL | undefined): Promise<Project | null> {
+  const [row] = await db.select(projectColumns).from(projects).where(condition).limit(1);
+  return row ? toProject(row) : null;
 }
 
 /** Creates or updates the project with this slug, so seeds and imports can run twice. */
 export async function upsertProjectBySlug(input: ProjectInput, options: ProjectWriteOptions): Promise<Project> {
-  const write = toProjectWrite(input, options);
-  const saved = await (await projectsCollection()).findOneAndUpdate({ slug: write.slug }, withUnset(write), {
-    upsert: true,
-    returnDocument: "after",
+  const { values, designers } = toProjectWrite(input, options);
+  return (await getDb()).transaction(async (tx) => {
+    const [saved] = await tx
+      .insert(projects)
+      .values({ id: newId(), ...values })
+      .onConflictDoUpdate({ target: projects.slug, set: values })
+      .returning({ id: projects.id });
+    // Safe: an upsert always returns its row.
+    const id = saved!.id;
+    await replaceDesigners(tx, id, designers);
+    const project = await readProject(tx, eq(projects.id, id));
+    if (!project) throw new Error(`project ${id} vanished inside its own transaction`);
+    return project;
   });
-  // Safe: with upsert and returnDocument "after", Mongo always returns the document.
-  return toProject(saved!);
 }
-
-const DUPLICATE_KEY = 11000;
 
 /**
  * Inserts a new project. Returns null when the slug is taken, by any project
@@ -101,15 +96,17 @@ const DUPLICATE_KEY = 11000;
  * even when two people save at once.
  */
 export async function insertProject(input: ProjectInput, options: ProjectWriteOptions): Promise<Project | null> {
-  const { $set } = toProjectWrite(input, options);
-  try {
-    const document = { ...$set, visuals: [] };
-    const { insertedId } = await (await projectsCollection()).insertOne(document);
-    return toProject({ _id: insertedId, ...document });
-  } catch (error) {
-    if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) return null;
-    throw error;
-  }
+  const { values, designers } = toProjectWrite(input, options);
+  return (await getDb()).transaction(async (tx) => {
+    const [saved] = await tx
+      .insert(projects)
+      .values({ id: newId(), ...values })
+      .onConflictDoNothing({ target: projects.slug })
+      .returning({ id: projects.id });
+    if (!saved) return null;
+    await replaceDesigners(tx, saved.id, designers);
+    return readProject(tx, eq(projects.id, saved.id));
+  });
 }
 
 /** Updates a live project in place. The slug never changes, so links keep working. Null if it's gone. */
@@ -118,13 +115,17 @@ export async function updateProjectById(
   input: ProjectInput,
   options: ProjectWriteOptions,
 ): Promise<Project | null> {
-  const write = toProjectWrite(input, options);
-  const saved = await (await projectsCollection()).findOneAndUpdate(
-    { _id: toObjectId(id), slug: write.slug, deleted_at: { $exists: false } },
-    withUnset(write),
-    { returnDocument: "after" },
-  );
-  return saved ? toProject(saved) : null;
+  const { values, designers } = toProjectWrite(input, options);
+  return (await getDb()).transaction(async (tx) => {
+    const [saved] = await tx
+      .update(projects)
+      .set(values)
+      .where(and(eq(projects.id, id), eq(projects.slug, values.slug), isNull(projects.deleted_at)))
+      .returning({ id: projects.id });
+    if (!saved) return null;
+    await replaceDesigners(tx, id, designers);
+    return readProject(tx, eq(projects.id, id));
+  });
 }
 
 /** Visible projects only, unless `includeDrafts` (for editors opening a draft to edit). */
@@ -132,42 +133,45 @@ export async function findProjectBySlug(
   slug: string,
   { includeDrafts = false }: { includeDrafts?: boolean } = {},
 ): Promise<Project | null> {
-  const filter = includeDrafts ? { slug, deleted_at: { $exists: false } } : { slug, ...VISIBLE };
-  const document = await (await projectsCollection()).findOne(filter);
-  return document ? toProject(document) : null;
+  return readProject(await getDb(), and(eq(projects.slug, slug), includeDrafts ? isNull(projects.deleted_at) : VISIBLE));
 }
 
 /** Several visible projects at once, for lookups keyed by slug (answer cards). Order isn't kept. */
 export async function findVisibleProjectsBySlugs(slugs: readonly string[]): Promise<Project[]> {
   if (slugs.length === 0) return [];
-  const documents = await (await projectsCollection()).find({ slug: { $in: [...slugs] }, ...VISIBLE }).toArray();
-  return documents.map(toProject);
+  const rows = await (await getDb()).select(projectColumns).from(projects).where(and(inArray(projects.slug, [...slugs]), VISIBLE));
+  return rows.map(toProject);
 }
 
-/** Visible projects matching the filters, as a MongoDB query. */
-export function toQuery(filters: ProjectFilters): Filter<Document> {
-  const conditions: Filter<Document>[] = [VISIBLE];
+/** Visible projects matching the filters, as a WHERE condition. */
+export function toCondition(filters: ProjectFilters): SQL | undefined {
+  const conditions: (SQL | undefined)[] = [VISIBLE];
 
   if (filters.q) {
-    const pattern = { $regex: escapeRegExp(filters.q), $options: "i" };
-    conditions.push({ $or: [{ name: pattern }, { client_name: pattern }] });
+    const pattern = `%${escapeLike(filters.q)}%`;
+    conditions.push(or(ilike(projects.name, pattern), ilike(projects.client_name, pattern)));
   }
-  if (filters.industry) conditions.push({ industry: filters.industry });
-  if (filters.product_type) conditions.push({ product_types: filters.product_type });
-  if (filters.ai_feature) conditions.push({ ai_features: filters.ai_feature });
-  if (filters.flow) conditions.push({ flows: filters.flow });
-  if (filters.business_model) conditions.push({ business_model: filters.business_model });
+  if (filters.industry) conditions.push(eq(projects.industry, filters.industry));
+  if (filters.product_type) conditions.push(arrayContains(projects.product_types, [filters.product_type]));
+  if (filters.ai_feature) conditions.push(arrayContains(projects.ai_features, [filters.ai_feature]));
+  if (filters.flow) conditions.push(arrayContains(projects.flows, [filters.flow]));
+  if (filters.business_model) conditions.push(arrayContains(projects.business_model, [filters.business_model]));
   if (filters.designer) {
-    const designer = toObjectId(filters.designer);
-    conditions.push({ $or: [{ lead_designer: designer }, { designers: designer }] });
+    const designer = filters.designer;
+    conditions.push(
+      or(
+        eq(projects.lead_designer, designer),
+        sql`exists (select 1 from project_designers pd where pd.project_id = "projects"."id" and pd.person_id = ${designer})`,
+      ),
+    );
   }
   if (filters.year) {
-    conditions.push({
-      delivery_date: { $gte: new Date(Date.UTC(filters.year, 0, 1)), $lt: new Date(Date.UTC(filters.year + 1, 0, 1)) },
-    });
+    conditions.push(
+      and(gte(projects.delivery_date, new Date(Date.UTC(filters.year, 0, 1))), lt(projects.delivery_date, new Date(Date.UTC(filters.year + 1, 0, 1)))),
+    );
   }
 
-  return { $and: conditions };
+  return and(...conditions);
 }
 
 export interface ProjectPage {
@@ -175,87 +179,86 @@ export interface ProjectPage {
   total: number;
 }
 
+const byName = asc(sql`lower(${projects.name})`);
+
 /** Newest deliveries first; undated projects (often ongoing) last, then by name. */
 export async function listProjects(filters: ProjectFilters, { page, page_size }: Pagination): Promise<ProjectPage> {
-  const collection = await projectsCollection();
-  const query = toQuery(filters);
+  const db = await getDb();
+  const condition = toCondition(filters);
 
-  const [documents, total] = await Promise.all([
-    collection
-      .find(query)
-      .sort({ delivery_date: -1, name: 1 })
-      .collation({ locale: "en", strength: 2 })
-      .skip((page - 1) * page_size)
-      .limit(page_size)
-      .toArray(),
-    collection.countDocuments(query),
+  const [rows, total] = await Promise.all([
+    db
+      .select(projectColumns)
+      .from(projects)
+      .where(condition)
+      .orderBy(sql`${projects.delivery_date} desc nulls last`, byName)
+      .offset((page - 1) * page_size)
+      .limit(page_size),
+    db.$count(projects, condition),
   ]);
 
-  return { items: documents.map(toProject), total };
+  return { items: rows.map(toProject), total };
 }
 
 /**
- * Every match, unpaged, for orderings Mongo can't compute (completeness).
+ * Every match, unpaged, for orderings SQL can't compute (completeness).
  * Fine at this library's size (100s of projects); revisit past a few thousand.
  */
 export async function listAllMatchingProjects(filters: ProjectFilters): Promise<Project[]> {
-  const documents = await (await projectsCollection()).find(toQuery(filters)).sort({ name: 1 }).collation({ locale: "en", strength: 2 }).toArray();
-  return documents.map(toProject);
+  const rows = await (await getDb()).select(projectColumns).from(projects).where(toCondition(filters)).orderBy(byName);
+  return rows.map(toProject);
 }
 
 /** Soft delete: the record stays for audit and undo, but nothing lists or opens it. Null if already gone. */
 export async function softDeleteProjectById(id: string, actor: Actor): Promise<Project | null> {
+  const db = await getDb();
   const now = new Date();
-  const saved = await (await projectsCollection()).findOneAndUpdate(
-    { _id: toObjectId(id), deleted_at: { $exists: false } },
-    { $set: { deleted_at: now, updated_by: actorSchema.parse(actor), updated_at: now } },
-    { returnDocument: "after" },
-  );
-  return saved ? toProject(saved) : null;
+  const [saved] = await db
+    .update(projects)
+    .set({ deleted_at: now, updated_by: actorSchema.parse(actor), updated_at: now })
+    .where(and(eq(projects.id, id), isNull(projects.deleted_at)))
+    .returning({ id: projects.id });
+  return saved ? readProject(db, eq(projects.id, saved.id)) : null;
 }
 
 /** Delivery years that have at least one visible project, newest first, for the year filter. */
 export async function listDeliveryYears(): Promise<number[]> {
-  const rows = await (await projectsCollection())
-    .aggregate<{ _id: number }>([
-      { $match: { ...VISIBLE, delivery_date: { $type: "date" } } },
-      { $group: { _id: { $year: "$delivery_date" } } },
-      { $sort: { _id: -1 } },
-    ])
-    .toArray();
-  return rows.map((row) => row._id);
+  const year = sql<number>`extract(year from ${projects.delivery_date} at time zone 'UTC')::int`.mapWith(Number);
+  const rows = await (await getDb())
+    .selectDistinct({ year })
+    .from(projects)
+    .where(and(VISIBLE, isNotNull(projects.delivery_date)))
+    .orderBy(desc(year));
+  return rows.map((row) => row.year);
 }
 
 /** Drafts waiting for review (migration, admin chat), oldest first so nothing waits forever. */
 export async function listDraftProjects(): Promise<Project[]> {
-  const documents = await (await projectsCollection())
-    .find(LIVE_DRAFT)
-    .sort({ updated_at: 1 })
-    .toArray();
-  return documents.map(toProject);
+  const rows = await (await getDb()).select(projectColumns).from(projects).where(LIVE_DRAFT).orderBy(asc(projects.updated_at));
+  return rows.map(toProject);
 }
 
 /** Approves a draft as it stands; null if it isn't a live draft any more. */
 export async function approveProjectById(id: string, actor: Actor): Promise<Project | null> {
-  const saved = await (await projectsCollection()).findOneAndUpdate(
-    { _id: toObjectId(id), review_status: "draft", deleted_at: { $exists: false } },
-    { $set: { review_status: "approved", updated_by: actorSchema.parse(actor), updated_at: new Date() } },
-    { returnDocument: "after" },
-  );
-  return saved ? toProject(saved) : null;
+  const db = await getDb();
+  const [saved] = await db
+    .update(projects)
+    .set({ review_status: "approved", updated_by: actorSchema.parse(actor), updated_at: new Date() })
+    .where(and(eq(projects.id, id), LIVE_DRAFT))
+    .returning({ id: projects.id });
+  return saved ? readProject(db, eq(projects.id, saved.id)) : null;
 }
 
 /** Every visible project, for analytics over the whole library (100s, not 1000s, of records). */
 export async function listAllVisibleProjects(): Promise<Project[]> {
-  const documents = await (await projectsCollection()).find(VISIBLE).toArray();
-  return documents.map(toProject);
+  const rows = await (await getDb()).select(projectColumns).from(projects).where(VISIBLE);
+  return rows.map(toProject);
 }
 
-/** Keeps the project's visuals list in step with the visuals collection. */
+/** Keeps the project's visuals list in step with the visuals table. */
 export async function setProjectVisualMembership(projectId: string, visualId: string, member: boolean): Promise<void> {
-  const collection = await projectsCollection();
-  const filter = { _id: toObjectId(projectId) };
-  const visual = toObjectId(visualId);
-  if (member) await collection.updateOne(filter, { $addToSet: { visuals: visual } });
-  else await collection.updateOne(filter, { $pull: { visuals: visual } as Document });
+  const visuals = member
+    ? sql`case when ${visualId} = any(${projects.visuals}) then ${projects.visuals} else array_append(${projects.visuals}, ${visualId}::text) end`
+    : sql`array_remove(${projects.visuals}, ${visualId}::text)`;
+  await (await getDb()).update(projects).set({ visuals }).where(eq(projects.id, projectId));
 }

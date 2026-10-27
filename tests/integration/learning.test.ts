@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { getDb } from "@/server/db/client";
 import { getAskStats, insertConversation, setConversationFeedback } from "@/server/repositories/conversations";
 import { insertGap, listOpenGaps, resolveGap } from "@/server/repositories/knowledge-gaps";
 import { insertVerifiedAnswer, listVerifiedAnswers, softDeleteVerifiedAnswer } from "@/server/repositories/verified-answers";
+import { resetDatabase } from "./database";
 
 const USER = "64b7f0c2a1b2c3d4e5f60718";
 const NOW = new Date("2026-10-14T12:00:00Z");
@@ -22,7 +22,7 @@ function turn(turnId: string, createdAt: Date, preview: boolean) {
 }
 
 beforeEach(async () => {
-  await (await getDb()).dropDatabase();
+  await resetDatabase();
 });
 
 describe("conversations", () => {

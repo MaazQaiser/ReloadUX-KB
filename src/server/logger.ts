@@ -24,7 +24,7 @@ interface LoggerOptions {
 const LEVEL_ORDER: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 
 // Matched against context keys, so secrets and personal data never reach log storage.
-const SENSITIVE_KEY = /pass(word)?|secret|token|api[-_]?key|authorization|cookie|private[-_]?key|credential|uri|email/i;
+const SENSITIVE_KEY = /pass(word)?|secret|token|api[-_]?key|authorization|cookie|private[-_]?key|credential|uri|database[-_]?url|email/i;
 const MAX_DEPTH = 6;
 
 function sanitize(value: unknown, depth: number, seen: WeakSet<object>): unknown {

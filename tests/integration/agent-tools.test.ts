@@ -3,12 +3,13 @@ import { builtInCatalog } from "@/lib/tag-catalog";
 import type { User } from "@/schemas/user";
 import { AGENT_TOOLS, runTool, toToolDefinition } from "@/server/agent/tools";
 import type { ToolContext } from "@/server/agent/tools/types";
+import { eq } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
-import { syncIndexes } from "@/server/db/indexes";
+import { knowledgeGaps } from "@/server/db/schema";
 import { createLogger } from "@/server/logger";
 import { insertVerifiedAnswer } from "@/server/repositories/verified-answers";
 import { seedDatabase } from "../../scripts/seed/run";
+import { resetDatabase } from "./database";
 
 // No Voyage key: search runs on keywords and verified answers on shared words, so results are exact.
 vi.mock("@/env", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/env")>()), getAiConfig: () => ({}) }));
@@ -28,9 +29,7 @@ async function run(name: string, input: unknown) {
 }
 
 beforeAll(async () => {
-  const db = await getDb();
-  await db.dropDatabase();
-  await syncIndexes(db, { dryRun: false });
+  await resetDatabase();
   await seedDatabase({ dryRun: false, log: createLogger({ level: "error", write: () => {} }) });
 });
 
@@ -109,7 +108,7 @@ describe("log_gap", () => {
   it("records the question for the review queue", async () => {
     const result = await runTool("log_gap", { reason: "not_recorded", note: "No delivery date for Questline" }, context("When was Questline delivered?"));
     expect(result).toMatchObject({ ok: true });
-    const gap = await (await getDb()).collection(COLLECTIONS.knowledgeGaps).findOne({ note: "No delivery date for Questline" });
+    const [gap] = await (await getDb()).select().from(knowledgeGaps).where(eq(knowledgeGaps.note, "No delivery date for Questline"));
     expect(gap).toMatchObject({ question: "When was Questline delivered?", reason: "not_recorded", status: "open" });
   });
 });

@@ -1,8 +1,8 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
-import { syncIndexes } from "@/server/db/indexes";
-import { CorruptDocumentError } from "@/server/repositories/mongo";
+import { people } from "@/server/db/schema";
+import { CorruptRowError } from "@/server/repositories/rows";
 import {
   findPeopleByIds,
   findPersonBySlug,
@@ -10,22 +10,23 @@ import {
   listPeople,
   upsertPersonBySlug,
 } from "@/server/repositories/people";
+import { resetDatabase } from "./database";
 
 const SEED = "system:seed";
 const sara = { name: "Sara Khan", slug: "sara-khan", email: "sara@reloadux.com", roles: ["designer" as const] };
 const omar = { name: "omar Ali", slug: "omar-ali", roles: ["account_manager" as const] };
 const bea = { name: "Bea Ruiz", slug: "bea-ruiz", roles: ["designer" as const], active: false };
 
-async function collection() {
-  return (await getDb()).collection(COLLECTIONS.people);
+async function rowCount() {
+  return (await getDb()).$count(people);
 }
 
-beforeAll(async () => {
-  await syncIndexes(await getDb(), { dryRun: false });
-});
+async function setColumns(slug: string, values: Partial<typeof people.$inferInsert>) {
+  await (await getDb()).update(people).set(values).where(eq(people.slug, slug));
+}
 
 beforeEach(async () => {
-  await (await collection()).deleteMany({});
+  await resetDatabase();
 });
 
 describe("upsertPersonBySlug", () => {
@@ -44,22 +45,22 @@ describe("upsertPersonBySlug", () => {
 
     expect(second.id).toBe(first.id);
     expect(second.name).toBe("Sara K.");
-    expect(await (await collection()).countDocuments()).toBe(1);
+    expect(await rowCount()).toBe(1);
   });
 
-  it("removes an optional field left out of the update instead of storing null", async () => {
+  it("clears an optional field left out of the update", async () => {
     await upsertPersonBySlug(sara, SEED);
     const updated = await upsertPersonBySlug({ name: sara.name, slug: sara.slug, roles: sara.roles }, SEED);
 
     expect(updated).not.toHaveProperty("email");
-    const raw = await (await collection()).findOne({ slug: sara.slug });
-    expect(raw).not.toHaveProperty("email");
+    const [raw] = await (await getDb()).select({ email: people.email }).from(people).where(eq(people.slug, sara.slug));
+    expect(raw?.email).toBeNull();
   });
 
   it("validates input and the actor before writing", async () => {
     await expect(upsertPersonBySlug({ ...sara, roles: [] }, SEED)).rejects.toThrow();
     await expect(upsertPersonBySlug(sara, "someone")).rejects.toThrow();
-    expect(await (await collection()).countDocuments()).toBe(0);
+    expect(await rowCount()).toBe(0);
   });
 });
 
@@ -68,7 +69,7 @@ describe("reads", () => {
     await upsertPersonBySlug(sara, SEED);
     expect(await findPersonBySlug("sara-khan")).toMatchObject({ name: "Sara Khan" });
 
-    await (await collection()).updateOne({ slug: "sara-khan" }, { $set: { deleted_at: new Date() } });
+    await setColumns("sara-khan", { deleted_at: new Date() });
     expect(await findPersonBySlug("sara-khan")).toBeNull();
     expect(await findPersonBySlug("nobody")).toBeNull();
   });
@@ -76,7 +77,7 @@ describe("reads", () => {
   it("finds by ids, including soft-deleted people", async () => {
     const a = await upsertPersonBySlug(sara, SEED);
     const b = await upsertPersonBySlug(omar, SEED);
-    await (await collection()).updateOne({ slug: "omar-ali" }, { $set: { deleted_at: new Date() } });
+    await setColumns("omar-ali", { deleted_at: new Date() });
 
     const found = await findPeopleByIds([a.id, b.id]);
     expect(found.map((person) => person.slug).sort()).toEqual(["omar-ali", "sara-khan"]);
@@ -93,11 +94,11 @@ describe("reads", () => {
     expect((await listPeople({ role: "designer", activeOnly: true })).map((p) => p.slug)).toEqual(["sara-khan"]);
   });
 
-  it("raises CorruptDocumentError for a record edited into an invalid shape", async () => {
+  it("raises CorruptRowError for a record edited into an invalid shape", async () => {
     await upsertPersonBySlug(sara, SEED);
-    await (await collection()).updateOne({ slug: "sara-khan" }, { $set: { roles: ["ceo"] } });
+    await setColumns("sara-khan", { roles: ["ceo"] });
 
-    await expect(findPersonBySlug("sara-khan")).rejects.toBeInstanceOf(CorruptDocumentError);
+    await expect(findPersonBySlug("sara-khan")).rejects.toBeInstanceOf(CorruptRowError);
   });
 });
 
@@ -105,6 +106,6 @@ describe("insertPerson", () => {
   it("inserts once and returns null for a taken slug", async () => {
     expect(await insertPerson(sara, SEED)).toMatchObject({ slug: "sara-khan", active: true, updated_by: SEED });
     expect(await insertPerson({ ...sara, name: "Another Sara" }, SEED)).toBeNull();
-    expect(await (await collection()).countDocuments()).toBe(1);
+    expect(await rowCount()).toBe(1);
   });
 });

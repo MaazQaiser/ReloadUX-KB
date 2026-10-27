@@ -1,23 +1,24 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
+import { people, projects } from "@/server/db/schema";
 import { createLogger } from "@/server/logger";
 import { getProjectDetail } from "@/server/services/projects";
 import { SEED_PEOPLE, SEED_PROJECTS } from "../../scripts/seed/data";
 import { seedDatabase } from "../../scripts/seed/run";
+import { resetDatabase } from "./database";
 
 const log = createLogger({ level: "error", write: () => {} });
 
 async function counts() {
   const db = await getDb();
   return {
-    people: await db.collection(COLLECTIONS.people).countDocuments(),
-    projects: await db.collection(COLLECTIONS.projects).countDocuments(),
+    people: await db.$count(people),
+    projects: await db.$count(projects),
   };
 }
 
 beforeEach(async () => {
-  await (await getDb()).dropDatabase();
+  await resetDatabase();
 });
 
 describe("seedDatabase", () => {

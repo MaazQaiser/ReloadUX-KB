@@ -1,6 +1,6 @@
 import { parseArgs } from "node:util";
 import { getAiConfig } from "@/env";
-import { closeMongoClient } from "@/server/db/client";
+import { closeDb } from "@/server/db/client";
 import { logger } from "@/server/logger";
 import { listAllVisibleProjects, listDraftProjects } from "@/server/repositories/projects";
 import { indexProject, planProjectIndex } from "@/server/services/project-index";
@@ -50,6 +50,6 @@ main()
     return 1;
   })
   .then(async (code) => {
-    await closeMongoClient();
+    await closeDb();
     process.exitCode = code;
   });

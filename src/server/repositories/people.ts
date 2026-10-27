@@ -1,20 +1,19 @@
 import "server-only";
-import { MongoServerError } from "mongodb";
+import { and, arrayContains, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
+import { people } from "@/server/db/schema";
 import { personInputSchema, personSchema, type Person, type PersonInput } from "@/schemas/person";
 import type { PersonRole } from "@/schemas/tags";
 import { actorSchema, type Actor } from "@/schemas/common";
-import { fromDocument, toObjectId, toUpdate } from "./mongo";
+import { fromRow, newId, withNulls } from "./rows";
 
-const NOT_DELETED = { deleted_at: { $exists: false } };
-
-async function people() {
-  return (await getDb()).collection(COLLECTIONS.people);
+function toPerson(row: typeof people.$inferSelect): Person {
+  return fromRow(personSchema, "people", row);
 }
 
-function toPerson(document: Parameters<typeof fromDocument>[2]): Person {
-  return fromDocument(personSchema, COLLECTIONS.people, document);
+function toPersonWrite(input: PersonInput, actor: Actor) {
+  // Every optional field is listed so leaving one out of the input clears it.
+  return { ...withNulls(personInputSchema.parse(input), ["email"]), updated_by: actorSchema.parse(actor), updated_at: new Date() };
 }
 
 /**
@@ -22,40 +21,29 @@ function toPerson(document: Parameters<typeof fromDocument>[2]): Person {
  * makes seed and import scripts safe to run twice.
  */
 export async function upsertPersonBySlug(input: PersonInput, actor: Actor): Promise<Person> {
-  const person = personInputSchema.parse(input);
-  // Every optional field is listed so leaving one out of the input clears it.
-  const { $set, $unset } = toUpdate({ email: undefined, ...person });
-
-  const saved = await (await people()).findOneAndUpdate(
-    { slug: person.slug },
-    {
-      $set: { ...$set, updated_by: actorSchema.parse(actor), updated_at: new Date() },
-      ...(Object.keys($unset).length > 0 && { $unset }),
-    },
-    { upsert: true, returnDocument: "after" },
-  );
-  // Safe: with upsert and returnDocument "after", Mongo always returns the document.
+  const values = toPersonWrite(input, actor);
+  const [saved] = await (await getDb())
+    .insert(people)
+    .values({ id: newId(), ...values })
+    .onConflictDoUpdate({ target: people.slug, set: values })
+    .returning();
+  // Safe: an upsert always returns its row.
   return toPerson(saved!);
 }
 
-const DUPLICATE_KEY = 11000;
-
 /** Inserts a new person; null when the slug is already taken (the unique index decides). */
 export async function insertPerson(input: PersonInput, actor: Actor): Promise<Person | null> {
-  const person = personInputSchema.parse(input);
-  const document = { ...person, updated_by: actorSchema.parse(actor), updated_at: new Date() };
-  try {
-    const { insertedId } = await (await people()).insertOne(document);
-    return toPerson({ _id: insertedId, ...document });
-  } catch (error) {
-    if (error instanceof MongoServerError && error.code === DUPLICATE_KEY) return null;
-    throw error;
-  }
+  const [saved] = await (await getDb())
+    .insert(people)
+    .values({ id: newId(), ...toPersonWrite(input, actor) })
+    .onConflictDoNothing({ target: people.slug })
+    .returning();
+  return saved ? toPerson(saved) : null;
 }
 
 export async function findPersonBySlug(slug: string): Promise<Person | null> {
-  const document = await (await people()).findOne({ slug, ...NOT_DELETED });
-  return document ? toPerson(document) : null;
+  const [row] = await (await getDb()).select().from(people).where(and(eq(people.slug, slug), isNull(people.deleted_at))).limit(1);
+  return row ? toPerson(row) : null;
 }
 
 /**
@@ -64,8 +52,8 @@ export async function findPersonBySlug(slug: string): Promise<Person | null> {
  */
 export async function findPeopleByIds(ids: readonly string[]): Promise<Person[]> {
   if (ids.length === 0) return [];
-  const documents = await (await people()).find({ _id: { $in: ids.map(toObjectId) } }).toArray();
-  return documents.map(toPerson);
+  const rows = await (await getDb()).select().from(people).where(inArray(people.id, [...ids]));
+  return rows.map(toPerson);
 }
 
 export interface ListPeopleOptions {
@@ -75,14 +63,10 @@ export interface ListPeopleOptions {
 
 /** For pickers and filters, sorted by name. */
 export async function listPeople({ role, activeOnly = false }: ListPeopleOptions = {}): Promise<Person[]> {
-  const documents = await (await people())
-    .find({
-      ...NOT_DELETED,
-      ...(role && { roles: role }),
-      ...(activeOnly && { active: true }),
-    })
-    .sort({ name: 1 })
-    .collation({ locale: "en", strength: 2 })
-    .toArray();
-  return documents.map(toPerson);
+  const rows = await (await getDb())
+    .select()
+    .from(people)
+    .where(and(isNull(people.deleted_at), role && arrayContains(people.roles, [role]), activeOnly ? eq(people.active, true) : undefined))
+    .orderBy(asc(sql`lower(${people.name})`));
+  return rows.map(toPerson);
 }

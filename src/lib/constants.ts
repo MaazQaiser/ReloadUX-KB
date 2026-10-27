@@ -1,6 +1,6 @@
 /**
  * Controlled tag lists. Records store the key; the label is what people see.
- * Labels follow SPEC.md wording. Phase 6 moves these to a database collection
+ * Labels follow SPEC.md wording. Phase 6 moves these to a database table
  * seeded from here, so admins can add values in Settings.
  */
 
@@ -150,7 +150,7 @@ export const MAX_FEEDBACK_NOTE_LENGTH = 1000;
 
 /**
  * Tag lists admins can add values to in Settings. Built-in values here never
- * change; added ones live in the tag_values collection. Status and roles stay
+ * change; added ones live in the tag_values table. Status and roles stay
  * fixed because code depends on each value.
  */
 export const EXTENDABLE_TAG_LISTS = {

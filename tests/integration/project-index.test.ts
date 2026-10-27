@@ -1,12 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { builtInCatalog } from "@/lib/tag-catalog";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
+import { projectChunks } from "@/server/db/schema";
 import { createLogger } from "@/server/logger";
 import { findSimilarChunks } from "@/server/repositories/project-chunks";
 import { indexProject } from "@/server/services/project-index";
 import { getProjectDetail } from "@/server/services/projects";
 import { seedDatabase } from "../../scripts/seed/run";
+import { resetDatabase } from "./database";
 
 // A 1024-dimension vector that leans towards one of a few topics, so similarity is predictable.
 const TOPICS = ["chatbot", "budget", "hr", "game"] as const;
@@ -27,14 +28,14 @@ vi.mock("@/env", async (importOriginal) => ({
 }));
 
 beforeAll(async () => {
-  await (await getDb()).dropDatabase();
+  await resetDatabase();
   await seedDatabase({ dryRun: false, log: createLogger({ level: "error", write: () => {} }) });
 });
 
 beforeEach(async () => {
   embed.mockClear();
   // Seeding already indexed every project; start each test from no chunks.
-  await (await getDb()).collection(COLLECTIONS.projectChunks).deleteMany({});
+  await (await getDb()).delete(projectChunks);
 });
 
 describe("indexProject", () => {
@@ -50,7 +51,7 @@ describe("indexProject", () => {
 
     const edited = await indexProject({ ...project, outcomes: "Intake completion rose by a third." }, builtInCatalog());
     expect(edited).toMatchObject({ status: "indexed", embedded: 1 });
-    const stored = await (await getDb()).collection(COLLECTIONS.projectChunks).countDocuments({});
+    const stored = await (await getDb()).$count(projectChunks);
     expect(stored).toBe(first.chunks);
   });
 

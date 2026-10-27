@@ -1,21 +1,18 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { eq, isNotNull } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
-import { syncIndexes } from "@/server/db/indexes";
+import { users } from "@/server/db/schema";
 import { findUserByFirebaseUid, upsertUserOnSignIn } from "@/server/repositories/users";
+import { resetDatabase } from "./database";
 
 const sara = { firebase_uid: "uid-sara", email: "Sara@ReloadUX.com", name: "Sara Malik" };
 
-async function collection() {
-  return (await getDb()).collection(COLLECTIONS.users);
+async function setRole(firebaseUid: string, role: string) {
+  await (await getDb()).update(users).set({ role }).where(eq(users.firebase_uid, firebaseUid));
 }
 
-beforeAll(async () => {
-  await syncIndexes(await getDb(), { dryRun: false });
-});
-
 beforeEach(async () => {
-  await (await collection()).deleteMany({});
+  await resetDatabase();
 });
 
 describe("upsertUserOnSignIn", () => {
@@ -28,14 +25,14 @@ describe("upsertUserOnSignIn", () => {
 
   it("updates the same user on later sign-ins and keeps their role and created date", async () => {
     const first = await upsertUserOnSignIn(sara, { promoteToAdmin: false });
-    await (await collection()).updateOne({ firebase_uid: "uid-sara" }, { $set: { role: "editor" } });
+    await setRole("uid-sara", "editor");
 
     const second = await upsertUserOnSignIn({ ...sara, name: "Sara M." }, { promoteToAdmin: false });
 
     expect(second).toMatchObject({ id: first.id, name: "Sara M.", role: "editor" });
     expect(second.created_at).toEqual(first.created_at);
     expect(second.last_sign_in_at.getTime()).toBeGreaterThanOrEqual(first.last_sign_in_at.getTime());
-    expect(await (await collection()).countDocuments()).toBe(1);
+    expect(await (await getDb()).$count(users)).toBe(1);
   });
 
   it("promotes listed initial admins, new or existing", async () => {
@@ -51,7 +48,7 @@ describe("upsertUserOnSignIn", () => {
 
   it("keeps the same person and role when their Firebase uid changes", async () => {
     const first = await upsertUserOnSignIn(sara, { promoteToAdmin: false });
-    await (await collection()).updateOne({ firebase_uid: "uid-sara" }, { $set: { role: "editor" } });
+    await setRole("uid-sara", "editor");
 
     const again = await upsertUserOnSignIn({ ...sara, firebase_uid: "uid-sara-new-project" }, { promoteToAdmin: false });
 
@@ -73,7 +70,7 @@ describe("upsertUserOnSignIn", () => {
 
     const without = await upsertUserOnSignIn({ ...sara, photo_url: undefined }, { promoteToAdmin: false });
     expect(without.photo_url).toBeUndefined();
-    expect(await (await collection()).countDocuments({ photo_url: { $exists: true } })).toBe(0);
+    expect(await (await getDb()).$count(users, isNotNull(users.photo_url))).toBe(0);
   });
 
   it("drops a photo URL that isn't https instead of failing the sign-in", async () => {

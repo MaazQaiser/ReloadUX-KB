@@ -1,9 +1,8 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { getDb } from "@/server/db/client";
-import { syncIndexes } from "@/server/db/indexes";
 import { createLogger } from "@/server/logger";
 import { searchProjects } from "@/server/services/search";
 import { seedDatabase } from "../../scripts/seed/run";
+import { resetDatabase } from "./database";
 
 // Vectors that point at a topic named in the text, so meaning-based matches are predictable.
 const TOPICS = ["chatbot", "budget", "hr", "game", "therapy"] as const;
@@ -31,9 +30,7 @@ vi.mock("@/server/ai/voyage", () => voyage);
 vi.mock("@/env", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/env")>()), getAiConfig: () => ai }));
 
 beforeAll(async () => {
-  const db = await getDb();
-  await db.dropDatabase();
-  await syncIndexes(db, { dryRun: false });
+  await resetDatabase();
   // Seed with Voyage "connected" so every project gets chunks to search.
   ai.voyageApiKey = "test-voyage-key-0123456789";
   await seedDatabase({ dryRun: false, log: createLogger({ level: "error", write: () => {} }) });

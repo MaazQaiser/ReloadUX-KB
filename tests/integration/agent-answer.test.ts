@@ -2,12 +2,13 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { askEventSchema, type AskEvent } from "@/schemas/answer";
 import type { User } from "@/schemas/user";
+import { eq } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
-import { syncIndexes } from "@/server/db/indexes";
+import { conversations } from "@/server/db/schema";
 import { createLogger } from "@/server/logger";
 import { streamAgentAnswer } from "@/server/services/agent-answer";
 import { seedDatabase } from "../../scripts/seed/run";
+import { resetDatabase } from "./database";
 
 // No Voyage: tools search by keywords, so the scripted conversation below is deterministic.
 vi.mock("@/env", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/env")>()), getAiConfig: () => ({}) }));
@@ -37,9 +38,7 @@ async function collect(client: Anthropic, question: string) {
 }
 
 beforeAll(async () => {
-  const db = await getDb();
-  await db.dropDatabase();
-  await syncIndexes(db, { dryRun: false });
+  await resetDatabase();
   await seedDatabase({ dryRun: false, log: createLogger({ level: "error", write: () => {} }) });
 });
 
@@ -63,14 +62,14 @@ describe("streamAgentAnswer", () => {
     if (done?.type !== "done") throw new Error("expected done");
     expect(done.preview).toBe(false);
 
-    const logged = await (await getDb()).collection(COLLECTIONS.conversations).findOne({ turn_id: done.turn_id });
+    const [logged] = await (await getDb()).select().from(conversations).where(eq(conversations.turn_id, done.turn_id));
     expect(logged).toMatchObject({ verdict: "yes", project_slugs: ["calmly-care"], tools_called: ["search_projects"], input_tokens: 2000, output_tokens: 200, preview: false });
   });
 
   it("turns a refusal into a friendly error and still logs the turn", async () => {
     const events = await collect(scripted(reply([], "refusal")), "Something odd");
     expect(events.at(-1)).toEqual({ type: "error", message: expect.stringContaining("rephrasing") });
-    const logged = await (await getDb()).collection(COLLECTIONS.conversations).findOne({ question: "Something odd" });
+    const [logged] = await (await getDb()).select().from(conversations).where(eq(conversations.question, "Something odd"));
     expect(logged).toMatchObject({ verdict: null, project_slugs: [], preview: false });
   });
 });

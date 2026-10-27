@@ -1,9 +1,10 @@
 import "server-only";
-import { MongoServerError } from "mongodb";
+import { asc } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
+import { tagValues } from "@/server/db/schema";
 import { TAG_LIST_NAMES, type TagListName } from "@/lib/constants";
 import { actorSchema, type Actor } from "@/schemas/common";
+import { newId } from "./rows";
 
 export interface AddedTagValue {
   list: TagListName;
@@ -11,26 +12,24 @@ export interface AddedTagValue {
   label: string;
 }
 
-async function tagValues() {
-  return (await getDb()).collection(COLLECTIONS.tagValues);
+function isTagListName(list: string): list is TagListName {
+  return (TAG_LIST_NAMES as readonly string[]).includes(list);
 }
 
 export async function listAddedTagValues(): Promise<AddedTagValue[]> {
-  const documents = await (await tagValues()).find({}).sort({ created_at: 1 }).toArray();
-  return documents
-    .filter((document): document is typeof document & AddedTagValue =>
-      TAG_LIST_NAMES.includes(document.list) && typeof document.key === "string" && typeof document.label === "string",
-    )
-    .map(({ list, key, label }) => ({ list, key, label }));
+  const rows = await (await getDb())
+    .select({ list: tagValues.list, key: tagValues.key, label: tagValues.label })
+    .from(tagValues)
+    .orderBy(asc(tagValues.created_at));
+  return rows.flatMap(({ list, key, label }) => (isTagListName(list) ? [{ list, key, label }] : []));
 }
 
 /** False when the list already has this key (the unique index decides). */
 export async function insertTagValue(value: AddedTagValue, actor: Actor): Promise<boolean> {
-  try {
-    await (await tagValues()).insertOne({ ...value, created_by: actorSchema.parse(actor), created_at: new Date() });
-    return true;
-  } catch (error) {
-    if (error instanceof MongoServerError && error.code === 11000) return false;
-    throw error;
-  }
+  const saved = await (await getDb())
+    .insert(tagValues)
+    .values({ id: newId(), ...value, created_by: actorSchema.parse(actor), created_at: new Date() })
+    .onConflictDoNothing({ target: [tagValues.list, tagValues.key] })
+    .returning({ id: tagValues.id });
+  return saved.length === 1;
 }

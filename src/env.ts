@@ -7,12 +7,10 @@ export type LogLevel = z.infer<typeof logLevelSchema>;
 export const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   LOG_LEVEL: logLevelSchema.default("info"),
-  MONGODB_URI: z
+  // postgres:// for a real server; pglite:memory or pglite:<dir> for an in-process database (tests, e2e, eval).
+  DATABASE_URL: z
     .string()
-    .regex(/^mongodb(\+srv)?:\/\//, "must start with mongodb:// or mongodb+srv://"),
-  MONGODB_DB: z
-    .string()
-    .regex(/^[A-Za-z0-9_-]{1,63}$/, "must be 1-63 letters, digits, '_' or '-'"),
+    .regex(/^(postgres(ql)?:\/\/|pglite:)/, "must start with postgres://, postgresql:// or pglite:"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

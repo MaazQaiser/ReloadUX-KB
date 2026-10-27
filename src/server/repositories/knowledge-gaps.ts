@@ -1,44 +1,37 @@
 import "server-only";
-import type { Document, WithId } from "mongodb";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
+import { knowledgeGaps } from "@/server/db/schema";
 import { knowledgeGapSchema, type GapResolution, type KnowledgeGap } from "@/schemas/knowledge-gap";
-import { fromDocument, toObjectId } from "./mongo";
+import { fromRow, newId } from "./rows";
 
-async function gaps() {
-  return (await getDb()).collection(COLLECTIONS.knowledgeGaps);
-}
-
-function toGap(document: WithId<Document>): KnowledgeGap {
-  return fromDocument(knowledgeGapSchema, COLLECTIONS.knowledgeGaps, {
-    ...document,
-    user_id: String(document.user_id),
-    ...(document.resolution && { resolution: { ...document.resolution, by: String(document.resolution.by) } }),
-  });
+function toGap(row: typeof knowledgeGaps.$inferSelect): KnowledgeGap {
+  const resolution = row.resolution && { ...row.resolution, at: new Date(row.resolution.at) };
+  return fromRow(knowledgeGapSchema, "knowledge_gaps", { ...row, resolution });
 }
 
 export async function insertGap(gap: Pick<KnowledgeGap, "question" | "reason" | "note" | "turn_id" | "user_id">): Promise<void> {
-  await (await gaps()).insertOne({
-    ...gap,
-    user_id: toObjectId(gap.user_id),
-    status: "open",
-    created_at: new Date(),
-  });
+  await (await getDb()).insert(knowledgeGaps).values({ id: newId(), ...gap, status: "open", created_at: new Date() });
 }
 
 export async function listOpenGaps(): Promise<KnowledgeGap[]> {
-  const documents = await (await gaps()).find({ status: "open" }).sort({ created_at: -1 }).limit(200).toArray();
-  return documents.map(toGap);
+  const rows = await (await getDb())
+    .select()
+    .from(knowledgeGaps)
+    .where(eq(knowledgeGaps.status, "open"))
+    .orderBy(desc(knowledgeGaps.created_at))
+    .limit(200);
+  return rows.map(toGap);
 }
 
 export async function resolveGap(
   id: string,
   resolution: { type: GapResolution; note?: string; by: string },
 ): Promise<KnowledgeGap | null> {
-  const saved = await (await gaps()).findOneAndUpdate(
-    { _id: toObjectId(id), status: "open" },
-    { $set: { status: "resolved", resolution: { ...resolution, by: toObjectId(resolution.by), at: new Date() } } },
-    { returnDocument: "after" },
-  );
+  const [saved] = await (await getDb())
+    .update(knowledgeGaps)
+    .set({ status: "resolved", resolution: { ...resolution, at: new Date().toISOString() } })
+    .where(and(eq(knowledgeGaps.id, id), eq(knowledgeGaps.status, "open")))
+    .returning();
   return saved ? toGap(saved) : null;
 }

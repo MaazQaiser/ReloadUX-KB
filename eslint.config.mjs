@@ -13,7 +13,7 @@ const eslintConfig = defineConfig([
       "no-console": "error",
     },
   },
-  globalIgnores([".next/**", ".next-e2e/**", ".data/**", "playwright/**", "out/**", "build/**", "next-env.d.ts", "pulse-design-system/**"]),
+  globalIgnores([".claude/**", ".next/**", ".next-e2e/**", ".data/**", "playwright/**", "out/**", "build/**", "next-env.d.ts", "pulse-design-system/**"]),
 ]);
 
 export default eslintConfig;

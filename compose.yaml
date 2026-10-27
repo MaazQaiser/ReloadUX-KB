@@ -1,0 +1,19 @@
+# Local PostgreSQL with pgvector for development: `pnpm db:local`.
+# Port 5433 so it can't collide with another Postgres already on 5432.
+# Connect pgAdmin to localhost:5433, database/user/password: reloadux.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: reloadux-kb-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: reloadux
+      POSTGRES_USER: reloadux
+      POSTGRES_PASSWORD: reloadux
+    ports:
+      - "5433:5432"
+    volumes:
+      - reloadux-pgdata:/var/lib/postgresql/data
+
+volumes:
+  reloadux-pgdata:

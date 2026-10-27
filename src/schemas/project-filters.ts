@@ -11,8 +11,7 @@ const PRESENTATION_KEYS = new Set(["sort", "view"]);
 
 /**
  * Filters for the Projects grid. Values arrive as URL search params, so
- * numbers are coerced. Until Atlas Search lands in phase 2, `q` is a
- * case-insensitive match on name and client.
+ * numbers are coerced. `q` is a case-insensitive match on name and client.
  */
 export const projectFiltersSchema = z.object({
   q: z.string().trim().min(1).max(100).optional(),

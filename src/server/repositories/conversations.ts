@@ -1,16 +1,19 @@
 import "server-only";
+import { and, count, eq, gte, sql } from "drizzle-orm";
 import { getDb } from "@/server/db/client";
-import { COLLECTIONS } from "@/server/db/collections";
+import { conversations } from "@/server/db/schema";
 import { conversationSchema, type Conversation, type NewConversation } from "@/schemas/conversation";
-import { fromDocument, toObjectId } from "./mongo";
+import { fromRow, newId } from "./rows";
 
-async function conversations() {
-  return (await getDb()).collection(COLLECTIONS.conversations);
+function toConversation(row: typeof conversations.$inferSelect): Conversation {
+  const feedback = row.feedback && { ...row.feedback, at: new Date(row.feedback.at) };
+  // A null verdict is a value (the turn had no answer), not an empty column.
+  return fromRow(conversationSchema, "conversations", { ...row, feedback }, ["verdict"]);
 }
 
 export async function insertConversation(turn: NewConversation): Promise<void> {
-  const { user_id, ...rest } = conversationSchema.omit({ id: true, feedback: true }).parse(turn);
-  await (await conversations()).insertOne({ ...rest, user_id: toObjectId(user_id) });
+  const fields = conversationSchema.omit({ id: true, feedback: true }).parse(turn);
+  await (await getDb()).insert(conversations).values({ id: newId(), ...fields });
 }
 
 /** Stores a rating on the asker's own turn; null if the turn isn't theirs or doesn't exist. */
@@ -19,12 +22,12 @@ export async function setConversationFeedback(
   userId: string,
   feedback: { rating: "up" | "down"; note?: string },
 ): Promise<Conversation | null> {
-  const saved = await (await conversations()).findOneAndUpdate(
-    { turn_id: turnId, user_id: toObjectId(userId) },
-    { $set: { feedback: { ...feedback, at: new Date() } } },
-    { returnDocument: "after" },
-  );
-  return saved ? fromDocument(conversationSchema, COLLECTIONS.conversations, { ...saved, user_id: saved.user_id.toHexString() }) : null;
+  const [saved] = await (await getDb())
+    .update(conversations)
+    .set({ feedback: { ...feedback, at: new Date().toISOString() } })
+    .where(and(eq(conversations.turn_id, turnId), eq(conversations.user_id, userId)))
+    .returning();
+  return saved ? toConversation(saved) : null;
 }
 
 export interface AskStats {
@@ -37,34 +40,25 @@ export interface AskStats {
 
 /** Counts for the analytics panel over the last `weeks` weeks. Ratings of preview answers are left out. */
 export async function getAskStats(weeks: number, now = new Date()): Promise<AskStats> {
-  const since = new Date(now.getTime() - weeks * 7 * 24 * 60 * 60 * 1000);
-  const [weekly, totals] = await Promise.all([
-    (await conversations())
-      .aggregate<{ _id: Date; count: number }>([
-        { $match: { created_at: { $gte: since } } },
-        { $group: { _id: { $dateTrunc: { date: "$created_at", unit: "week", startOfWeek: "monday" } }, count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
-      ])
-      .toArray(),
-    (await conversations())
-      .aggregate<{ total: number; rated: number; up: number }>([
-        { $match: { created_at: { $gte: since } } },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: 1 },
-            rated: { $sum: { $cond: [{ $and: [{ $ne: ["$preview", true] }, { $ifNull: ["$feedback", false] }] }, 1, 0] } },
-            up: { $sum: { $cond: [{ $and: [{ $ne: ["$preview", true] }, { $eq: ["$feedback.rating", "up"] }] }, 1, 0] } },
-          },
-        },
-      ])
-      .toArray(),
+  const db = await getDb();
+  const since = gte(conversations.created_at, new Date(now.getTime() - weeks * 7 * 24 * 60 * 60 * 1000));
+  // date_trunc('week') starts weeks on Monday.
+  const week = sql`date_trunc('week', ${conversations.created_at} at time zone 'UTC') at time zone 'UTC'`.mapWith(conversations.created_at);
+  const [weekly, [totals]] = await Promise.all([
+    db.select({ week, count: count() }).from(conversations).where(since).groupBy(week).orderBy(week),
+    db
+      .select({
+        total: count(),
+        rated: count(sql`case when not ${conversations.preview} and ${conversations.feedback} is not null then 1 end`),
+        up: count(sql`case when not ${conversations.preview} and ${conversations.feedback}->>'rating' = 'up' then 1 end`),
+      })
+      .from(conversations)
+      .where(since),
   ]);
-  const summary = totals[0] ?? { total: 0, rated: 0, up: 0 };
   return {
-    weekly: weekly.map((row) => ({ week: row._id, count: row.count })),
-    totalQuestions: summary.total,
-    ratedAnswers: summary.rated,
-    thumbsUp: summary.up,
+    weekly,
+    totalQuestions: totals?.total ?? 0,
+    ratedAnswers: totals?.rated ?? 0,
+    thumbsUp: totals?.up ?? 0,
   };
 }

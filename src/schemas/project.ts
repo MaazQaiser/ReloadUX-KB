@@ -51,7 +51,7 @@ export const projectInputSchema = z
     business_model: businessModelsSchema.default([]),
     personas: uniqueList(shortTextSchema).max(MAX_PERSONAS, `list at most ${MAX_PERSONAS} personas`).default([]),
 
-    // People: ids from the people collection
+    // People: ids from the people table
     lead_designer: idSchema,
     designers: idListSchema.default([]),
     account_manager: idSchema.optional(),
@@ -70,7 +70,7 @@ export const projectInputSchema = z
     case_study_url: linksSchema,
     drive_folder: linksSchema,
 
-    // Visuals: ids from the visuals collection (phase 5)
+    // Visuals: ids from the visuals table (phase 5)
     visuals: z.array(idSchema).default([]),
 
     // Story

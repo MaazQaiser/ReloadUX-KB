@@ -1,7 +1,6 @@
 import { projectInputSchema } from "@/schemas/project";
 import { personInputSchema } from "@/schemas/person";
-import { getDb } from "@/server/db/client";
-import { syncIndexes } from "@/server/db/indexes";
+import { migrateDb } from "@/server/db/client";
 import type { Logger } from "@/server/logger";
 import { savePerson } from "@/server/services/people";
 import { saveProject } from "@/server/services/projects";
@@ -51,7 +50,8 @@ function validateOnly(log: Logger): SeedSummary {
 export async function seedDatabase({ dryRun, log }: { dryRun: boolean; log: Logger }): Promise<SeedSummary> {
   if (dryRun) return validateOnly(log);
 
-  await syncIndexes(await getDb(), { dryRun: false });
+  // Tables first, so seeding a brand-new database just works.
+  await migrateDb();
 
   const idBySlug = new Map<string, string>();
   for (const input of SEED_PEOPLE) {

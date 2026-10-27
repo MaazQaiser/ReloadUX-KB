@@ -1,5 +1,5 @@
 import { parseArgs } from "node:util";
-import { closeMongoClient } from "@/server/db/client";
+import { closeDb } from "@/server/db/client";
 import { logger } from "@/server/logger";
 import { seedDatabase } from "./run";
 
@@ -17,6 +17,6 @@ main()
     return 1;
   })
   .then(async (code) => {
-    await closeMongoClient();
+    await closeDb();
     process.exitCode = code;
   });

@@ -1,17 +1,15 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type { User } from "@/schemas/user";
-import { getDb } from "@/server/db/client";
-import { syncIndexes } from "@/server/db/indexes";
 import { createLogger } from "@/server/logger";
 import { getProjectDetail, saveProject } from "@/server/services/projects";
 import { addTagValue, getTagCatalog } from "@/server/services/tags";
 import { seedDatabase } from "../../scripts/seed/run";
+import { resetDatabase } from "./database";
 
 const admin = { id: "64b7f0c2a1b2c3d4e5f60799", role: "admin" } as User;
 
 beforeAll(async () => {
-  await (await getDb()).dropDatabase();
-  await syncIndexes(await getDb(), { dryRun: false });
+  await resetDatabase();
   await seedDatabase({ dryRun: false, log: createLogger({ level: "error", write: () => {} }) });
 });
 

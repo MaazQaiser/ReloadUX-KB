@@ -41,14 +41,14 @@ describe("createLogger", () => {
       userId: "u1",
       email: "sara@reloadux.com",
       headers: { authorization: "Bearer abc", cookie: "session=xyz" },
-      config: { MONGODB_URI: "mongodb+srv://u:p@host", apiKey: "sk-123", privateKey: "-----BEGIN" },
+      config: { DATABASE_URL: "postgres://u:p@host", apiKey: "sk-123", privateKey: "-----BEGIN" },
     });
 
     expect(lines[0]?.entry).toMatchObject({
       userId: "u1",
       email: "[redacted]",
       headers: { authorization: "[redacted]", cookie: "[redacted]" },
-      config: { MONGODB_URI: "[redacted]", apiKey: "[redacted]", privateKey: "[redacted]" },
+      config: { DATABASE_URL: "[redacted]", apiKey: "[redacted]", privateKey: "[redacted]" },
     });
     expect(JSON.stringify(lines)).not.toMatch(/abc|xyz|sk-123|u:p@host|sara@/);
   });

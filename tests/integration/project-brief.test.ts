@@ -1,11 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { getDb } from "@/server/db/client";
 import { createLogger } from "@/server/logger";
 import { getProjectBrief } from "@/server/services/project-brief";
 import { seedDatabase } from "../../scripts/seed/run";
+import { resetDatabase } from "./database";
 
 beforeAll(async () => {
-  await (await getDb()).dropDatabase();
+  await resetDatabase();
   await seedDatabase({ dryRun: false, log: createLogger({ level: "error", write: () => {} }) });
 });
 

@@ -1,12 +1,14 @@
-import { randomUUID } from "node:crypto";
-import { afterAll, inject } from "vitest";
+import { afterAll, beforeAll } from "vitest";
 
-// One database per test file, so files can run in parallel without sharing data.
-process.env.MONGODB_URI = inject("mongoUri");
-process.env.MONGODB_DB = `test_${randomUUID().replaceAll("-", "").slice(0, 16)}`;
+// One in-memory Postgres (PGlite) per test file, so files can run in parallel without sharing data.
+process.env.DATABASE_URL = "pglite:memory";
+
+beforeAll(async () => {
+  const { migrateDb } = await import("@/server/db/client");
+  await migrateDb();
+});
 
 afterAll(async () => {
-  const { closeMongoClient, getDb } = await import("@/server/db/client");
-  await (await getDb()).dropDatabase();
-  await closeMongoClient();
+  const { closeDb } = await import("@/server/db/client");
+  await closeDb();
 });
