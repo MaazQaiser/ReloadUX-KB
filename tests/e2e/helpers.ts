@@ -5,6 +5,8 @@ export const VIEWER = { email: "viewer@reloadux.com", state: "playwright/.auth/v
 
 const SIGN_IN_ATTEMPTS = 3;
 const RELAY_READY_TIMEOUT_MS = 10_000;
+const POPUP_STEP_TIMEOUT_MS = 5_000;
+const SESSION_TIMEOUT_MS = 15_000;
 
 /**
  * Signs in through the real login page: the Google popup is served by the
@@ -19,20 +21,35 @@ export async function signInThroughPopup(page: Page, email: string) {
     await page.getByRole("button", { name: "Continue with Google" }).click();
     const popup = await popupPromise;
 
-    if (await relayIframeLoads(page)) {
-      // The emulator's own page doesn't link labels to inputs, so use its element ids.
-      await popup.locator("#add-account-button").click();
-      await popup.locator("#email-input").fill(email);
-      await popup.locator("#display-name-input").fill(email.split("@")[0] ?? email);
-      await popup.locator("#sign-in").click();
-      await popup.waitForEvent("close");
-      return;
-    }
+    if ((await relayIframeLoads(page)) && (await signInInPopup(page, popup, email))) return;
     // Closing the popup makes Firebase give up on this attempt and re-enable the button.
-    await popup.close();
+    if (!popup.isClosed()) await popup.close();
     await expect(page.getByRole("button", { name: "Continue with Google" })).toBeEnabled({ timeout: 20_000 });
   }
-  throw new Error(`Firebase's relay iframe never loaded in ${SIGN_IN_ATTEMPTS} sign-in attempts`);
+  throw new Error(`Sign-in never reached the server in ${SIGN_IN_ATTEMPTS} attempts`);
+}
+
+/**
+ * Fills in the emulator's account form. Even with the relay loaded, a step can
+ * stall or the result never reach the page, so this reports false (the caller
+ * starts over) unless the page goes on to ask the server for a session.
+ */
+async function signInInPopup(page: Page, popup: Page, email: string): Promise<boolean> {
+  const step = { timeout: POPUP_STEP_TIMEOUT_MS };
+  try {
+    // The emulator's own page doesn't link labels to inputs, so use its element ids.
+    await popup.locator("#add-account-button").click(step);
+    await popup.locator("#email-input").fill(email, step);
+    await popup.locator("#display-name-input").fill(email.split("@")[0] ?? email, step);
+    const session = page
+      .waitForResponse((response) => new URL(response.url()).pathname === "/api/auth/session", { timeout: SESSION_TIMEOUT_MS })
+      .then(() => true, () => false);
+    await popup.locator("#sign-in").click(step);
+    return await session;
+  } catch {
+    // A stalled step: this attempt is lost, and the caller retries.
+    return false;
+  }
 }
 
 /**

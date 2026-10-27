@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { expectSignedIn, signInThroughPopup, signOut, VIEWER } from "./helpers";
 
+// One at a time, like the setup project: concurrent emulator popups can lose their result.
+test.describe.configure({ mode: "default" });
+
 test.describe("signed out", () => {
   test("is sent to sign in, then back to the page they asked for", async ({ page }) => {
     await page.goto("/projects/ledgerly");
@@ -36,7 +39,8 @@ test.describe("signed in", () => {
     const page = await context.newPage();
 
     await page.goto("/projects");
-    await expect(page.getByText("viewer@reloadux.com · viewer").or(page.getByText("viewer · viewer"))).toBeVisible();
+    // The avatar menu shows the name, then the role; this account's name is also "viewer".
+    await expect(page.getByRole("button", { name: /^Account menu for / }).getByText("viewer", { exact: true })).toHaveCount(2);
     await expect(page.getByRole("link", { name: "Add project" })).toHaveCount(0);
 
     await page.goto("/projects/new");
