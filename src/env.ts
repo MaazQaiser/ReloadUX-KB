@@ -165,3 +165,27 @@ export function parseIntegrations(source: EnvSource): Integrations {
 export function getIntegrations(): Integrations {
   return parseIntegrations(process.env);
 }
+
+const aiEnvSchema = z.object({
+  ANTHROPIC_API_KEY: z.string().min(20, "looks too short to be an API key").optional(),
+  VOYAGE_API_KEY: z.string().min(20, "looks too short to be an API key").optional(),
+});
+
+export interface AiConfig {
+  /** Unset means the Ask screen keeps its preview answers (development without keys, e2e). */
+  anthropicApiKey?: string;
+  /** Needed for embeddings and reranking; search falls back to keywords without it. */
+  voyageApiKey?: string;
+}
+
+export function parseAiConfig(source: EnvSource): AiConfig {
+  const env = parseEnv(aiEnvSchema, source);
+  return { anthropicApiKey: env.ANTHROPIC_API_KEY, voyageApiKey: env.VOYAGE_API_KEY };
+}
+
+let cachedAi: AiConfig | undefined;
+
+export function getAiConfig(): AiConfig {
+  cachedAi ??= parseAiConfig(process.env);
+  return cachedAi;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EnvError, parseAuthConfig, parseIntegrations, parseServerEnv } from "./env";
+import { EnvError, parseAiConfig, parseAuthConfig, parseIntegrations, parseServerEnv } from "./env";
 
 const valid = {
   MONGODB_URI: "mongodb+srv://user:s3cret@cluster0.example.mongodb.net",
@@ -115,5 +115,24 @@ describe("parseIntegrations", () => {
         R2_SECRET_ACCESS_KEY: "x",
       }),
     ).toEqual({ anthropic: true, voyage: false, r2: false });
+  });
+});
+
+describe("parseAiConfig", () => {
+  it("treats missing or blank keys as not configured", () => {
+    expect(parseAiConfig({})).toEqual({ anthropicApiKey: undefined, voyageApiKey: undefined });
+    expect(parseAiConfig({ ANTHROPIC_API_KEY: "", VOYAGE_API_KEY: "" })).toEqual({ anthropicApiKey: undefined, voyageApiKey: undefined });
+  });
+
+  it("returns the keys when set", () => {
+    const keys = { ANTHROPIC_API_KEY: "sk-ant-test-0123456789abcdef", VOYAGE_API_KEY: "pa-test-0123456789abcdef" };
+    expect(parseAiConfig(keys)).toEqual({ anthropicApiKey: keys.ANTHROPIC_API_KEY, voyageApiKey: keys.VOYAGE_API_KEY });
+  });
+
+  it("names a malformed key without echoing it", () => {
+    const failure = () => parseAiConfig({ ANTHROPIC_API_KEY: "short-secret" });
+    expect(failure).toThrow(EnvError);
+    expect(failure).toThrow(/ANTHROPIC_API_KEY/);
+    expect(failure).not.toThrow(/short-secret/);
   });
 });
